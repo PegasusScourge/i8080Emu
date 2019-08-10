@@ -47,6 +47,15 @@ void writeMemory(i8080State* state, int index, uint8_t val) {
 	}
 }
 
+void setPC(i8080State* state, uint16_t v) {
+	if (boundsCheckMemIndex(state, v)) {
+		state->pc = v;
+	}
+	else {
+		// ERROR
+	}
+}
+
 bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
 	bool success = true;
 	bool pcShouldIncrement = true;

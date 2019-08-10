@@ -24,3 +24,6 @@ uint8_t readMemory(i8080State* state, int index);
 
 // Writes to memory at the index
 void writeMemory(i8080State* state, int index, uint8_t value);
+
+// Sets the PC
+void setPC(i8080State* state, uint16_t v);

@@ -327,5 +327,3 @@ uint8_t getInstructionClockCycles(uint8_t opcode);
 
 // Returns the number of clock cycles an instruction takes if it fails
 uint8_t getFailedInstructionClockCycles(uint8_t opcode);
-
-void setPC(i8080State* state, uint16_t v);

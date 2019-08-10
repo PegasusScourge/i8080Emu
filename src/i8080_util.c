@@ -157,11 +157,4 @@ uint8_t getFailedInstructionClockCycles(uint8_t opcode) {
 	return 0;
 }
 
-void setPC(i8080State* state, uint16_t v) {
-	if (boundsCheckMemIndex(state, v)) {
-		state->pc = v;
-	}
-	else {
-		// ERROR
-	}
-}
+
