@@ -70,7 +70,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JMP(%02X) %04X (%02X %02X)", state->pc, JMP, store16_1, byte1, byte2);
-		state->pc = store16_1; // Set the pc to (byte2 << 8) + byte1
+		setPC(state, store16_1); // Set the pc to jmpPos
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	default:
