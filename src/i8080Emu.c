@@ -33,7 +33,7 @@ sfRenderWindow* window = NULL; // window handle
 sfEvent cEvent; // Event container
 sfFont* font = NULL;
 
-#define TEXT_SIZE 16
+#define TEXT_SIZE 14
 
 int main(int argc, char** argv) {
 	// Open the log file
@@ -244,7 +244,7 @@ void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
 	for (int i = state->pc - 10; i < state->pc + 10; i++) {
 		if (boundsCheckMemIndex(state, i)) {
 			if (i == state->pc) {
-				sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0));
+				sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the current PC in red
 			}
 			else {
 				sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
@@ -252,6 +252,27 @@ void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
 
 			_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
 			_itoa(readMemory(state, i), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_MEM_COL;
+		}
+		pos.y += incY;
+	}
+
+	#define X_POS_STACK_COL 600
+	pos.x = X_POS_STACK_COL;
+	pos.y = TEXT_SIZE + 4;
+
+	sfText_setString(renderText, "Stack:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+	// Display the stack
+	for (int i = state->sp - 2; i < state->sp + 20; i+=2) {
+		if (boundsCheckMemIndex(state, i)) {
+			if (i == state->sp) {
+				sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the top of the stack in red
+			}
+			else {
+				sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+			}
+
+			_itoa(i+2, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
+			_itoa(readMemory(state, i+2) + (readMemory(state, i+1) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
 		}
 		pos.y += incY;
 	}

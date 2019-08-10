@@ -103,6 +103,15 @@ void reset8080(i8080State* state) {
 	state->pc = 0;
 	state->clockFreqMHz = 0.005;
 	state->waitCycles = 0;
+
+	// Set the flags
+	state->f.a = 0;
+	state->f.c = 0;
+	state->f.one = 1;
+	state->f.p = 0;
+	state->f.s = 0;
+	state->f.z = 0;
+	state->f.zero = 0;
 }
 
 int getConsoleLine(char* buf, int bufLen) {

@@ -33,6 +33,16 @@ Utility functions and types
 typedef unsigned char uint8_t;
 #define UINT16_MAX 0xFFFF
 typedef unsigned short uint16_t;
+typedef struct flagRegister {
+	int s : 1; // sign flag
+	int z : 1; // zero flag
+	int a : 1; // auxiliary carry flag
+	#define ac a // a is also called ac (auxiliary carry flag)
+	int p : 1; // parity flag
+	int c : 1; // carry flag
+	int zero : 1; // always zero, bits 3 and 5
+	int one : 1; // always one, bit 1
+} flagRegister;
 typedef struct i8080State {
 	uint8_t a;
 	uint8_t b;
@@ -48,6 +58,7 @@ typedef struct i8080State {
 	float clockFreqMHz;
 	int valid : 1;
 	int waitCycles;
+	struct flagRegister f;
 } i8080State;
 
 enum i8080Opcode {

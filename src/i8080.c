@@ -78,6 +78,7 @@ uint16_t peakStack(i8080State* state) {
 uint16_t popStack(i8080State* state) {
 	uint16_t stckVal = peakStack(state);
 	setSP(state, state->sp + 2);
+	return stckVal;
 }
 
 bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
@@ -101,9 +102,35 @@ bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
 	switch (opcode) {
 	case NOP: // Do nothing
 		break;
+	case LXI_B: // put in BC D16
+		log_trace("[%04X] LXI_B(%02X) B:%02X C:%02X", state->pc, LXI_SP, byte2, byte1);
+		state->b = byte2;
+		state->c = byte1;
+		break;
+	case STAX_B: // write value of A to memory[BC]
+		store16_1 = (state->b << 8) + state->c;
+		log_trace("[%04X] STAX_B(%02X) BC:%04X A:%02X", state->pc, STAX_B, store16_1, state->a);
+		writeMemory(state, store16_1, state->a);
+		break;
+	case INX_B:
+		store16_1 = 1 + (state->b << 8) + state->c;
+		log_trace("[%04X] INX_B(%02X)", state->pc, INX_B);
+		state->b = (store16_1 & 0xFF00) >> 8;
+		state->c = (store16_1 & 0x00FF);
+	case INR_B:
+		log_trace("[%04X] INR_B(%02X)", state->pc, INR_B);
+		state->b = state->b + 1;
+	case DCR_B:
+		log_trace("[%04X] INR_B(%02X)", state->pc, INR_B);
+		state->b = state->b - 1;
 	case MVI_B:
 		log_trace("[%04X] MVI_B(%02X) %02X", state->pc, MVI_B, byte1);
 		state->b = byte1;
+		break;
+	case RLC: // Bitshift and place the dropped bit in the carry flag and bit 0 of the new number
+		store8_1 = state->a >> 7; // Get the 7th bit
+		state->f.c = store8_1; // Store it in the carry flag
+		state->a = state->a & store8_1; // Store the 7th bit in position
 		break;
 	case LXI_SP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // D16
@@ -137,5 +164,5 @@ bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
 }
 
 void unimplementedOpcode(uint8_t opcode) {
-	log_warn("Unimplemented instruction %02X", opcode);
+	log_warn("Unimplemented opcode %02X", opcode);
 }
