@@ -1,0 +1,301 @@
+/*
+
+i8080Emu.c
+
+Main file
+
+*/
+
+#include "i8080_util.h"
+#include "i8080.h"
+
+#include "log.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+#include <SFML/Graphics.h>
+
+/* Function defs */
+// Initialise the graphics
+void initGraphics();
+// Close the graphics
+void closeGraphics();
+// Handle the events
+void handleEvent(const sfEvent* evt, i8080State* state);
+// Render the state info for the window
+void renderStateInfo(i8080State* state, float accum, float frameTimeMillis);
+
+// var defs
+sfRenderWindow* window = NULL; // window handle
+sfEvent cEvent; // Event container
+sfFont* font = NULL;
+
+#define TEXT_SIZE 16
+
+int main(int argc, char** argv) {
+	// Open the log file
+	FILE* logFile = fopen("i8080Emu.log", "w");
+	if (logFile == NULL) {
+		// Error
+		printf("error: Failed to open 'i8080Emu.log' for writing\n");
+		return -1;
+	}
+	// Pass the log file
+	log_set_fp(logFile);
+
+	// Init the 8080
+	i8080State state;
+	init8080(&state);
+	
+	if (argc > 1) {
+		log_debug("Got argument # %i", argc);
+		// Check for arguments
+		for(int i = 0; i < argc; i++) {
+			log_debug("Argument '%s' at index %i", argv[i], i);
+			if (strcmp("-h", argv[i]) == 0 || strcmp("--help", argv[i]) == 0) {
+				// Print the help text and exit
+				printf("Usage:\ni8080.exe [switch [arg]]\n -h : Displays this message\n -l <filename> <memory index> : loads a rom into memory at memory index\n --help : alias for -h\n --load <filename> <memory index> : alias for -l\n");
+				return 0;
+			}
+			else if (strcmp("-l", argv[i]) == 0 || strcmp("--load", argv[i]) == 0) {
+				// attempt to load a file to a position
+				if ((i + 2) < argc) {
+					// There are enough arguments to support this switch
+					log_info("Loading file '%s' into memory index %s", argv[i + 1], argv[i + 2]);
+					loadFile(argv[i + 1], state.memory, i8080_MEMORY_SIZE, strtol(argv[i+2], NULL, 10));
+				}
+				else {
+					printf("Invalid switch '%s': requires two arguments!\n", argv[i]);
+					return -1;
+				}
+			}
+		}
+	}
+
+	// Allow the user to enter into the command console the files they wish to load
+	char consoleBuff[200];
+	char memIndexBuff[20];
+	int gotChars;
+
+	// Only do this loop if we got no arguments
+	while (argc == 1) {
+		printf("Please enter the ROM file you wish to load:\n> ");
+		gotChars = getConsoleLine(&consoleBuff, 200);
+		printf("Enter the memory index this should be loaded into:\n> ");
+		gotChars = getConsoleLine(&memIndexBuff, 20);
+		int memIndex = strtol(&memIndexBuff, NULL, 10);
+		if (boundsCheckMemIndex(&state, memIndex)) {
+			// We are in range, load the rom
+			loadFile(&consoleBuff, state.memory, i8080_MEMORY_SIZE, memIndex);
+			printf("Loaded ROM\n");
+		}
+		else {
+			printf("*********************************************************\nFailed to load ROM: specified memory index was outside the range 0 - %i\n", i8080_MEMORY_SIZE);
+		}
+		printf("Do you wish to load another ROM? (y/n)\n> ");
+		gotChars = getConsoleLine(&consoleBuff, 200);
+		if (strcmp(consoleBuff, "y") != 0)
+			break;
+	}
+
+	// Init the graphics
+	log_info("--- Init graphics ---");
+	initGraphics();
+	log_info("-- Graphics init complete ---");
+
+	// Create the timer
+	sfClock* timer = sfClock_create();
+	sfTime time;
+
+	// Timing variables
+	float cycleTime = 0; // time a single clock pulse takes in milliseconds
+	float elapsedTime = 0;
+	float accumulator = 0;
+
+	// Do emulation
+	while (state.valid) {
+		// check events
+		while (sfRenderWindow_pollEvent(window, &cEvent)) {
+			handleEvent(&cEvent, &state);
+		}
+
+		// Calculate the time passed since the last loop
+		cycleTime = 1.0f / (float)state.clockFreqMHz;
+		time = sfClock_getElapsedTime(timer);
+		sfClock_restart(timer);
+		elapsedTime = (float)sfTime_asMicroseconds(time) / 1000.0f;
+		accumulator += elapsedTime;
+		float accumPrev = accumulator;
+
+		if (accumulator >= cycleTime) {
+			cpuTick(&state);
+			accumulator -= cycleTime;
+		}
+
+		sfRenderWindow_clear(window, sfColor_fromRGB(0, 0, 0));
+		renderStateInfo(&state, accumPrev, elapsedTime);
+
+		// Display the window
+		sfRenderWindow_display(window);
+	}
+
+	// Destroy the timer
+	sfClock_destroy(timer);
+
+	// Close the SFML window
+	closeGraphics();
+
+	// Free the memory
+	free(state.memory);
+
+	// Close the log file
+	fclose(logFile);
+
+	return 0;
+}
+
+void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
+	sfText* renderText = sfText_create();
+	if (renderText == NULL) {
+		log_warn("Rendering text object failed to create");
+		return;
+	}
+	sfText_setCharacterSize(renderText, TEXT_SIZE);
+	sfText_setFont(renderText, font);
+	sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+
+	// Do the state rendering
+	sfVector2f pos;
+	#define X_INIT_POS 16
+	pos.x = X_INIT_POS;
+	pos.y = TEXT_SIZE + 4;
+	int incY = TEXT_SIZE + 2;
+	int xSpace = TEXT_SIZE * 12;
+
+	char buf[80];
+
+	sfText_setString(renderText, "Registers:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+
+	sfText_setString(renderText, "a:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->a, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "b:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->b, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "c:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->c, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "d:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->d, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "e:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->e, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "h:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->h, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "l:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->l, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "pc:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->pc, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "sp:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->sp, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	pos.y += incY;
+	sfText_setString(renderText, "Wait cycles:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->waitCycles, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "Accumulator (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_gcvt(accum, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "Frame Time (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_gcvt(frameTimeMillis, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "Clock frequency (MHz):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_gcvt(state->clockFreqMHz, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "Cycle time (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_gcvt(1.0f / (float)state->clockFreqMHz, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+	
+	pos.y += incY;
+	sfText_setString(renderText, "instruction:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(readMemory(state, state->pc), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "byte1:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(readMemory(state, state->pc + 1), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "byte2:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(readMemory(state, state->pc), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "instr len:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(getInstructionLength(readMemory(state, state->pc)), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	#define X_POS_MEM_COL 450
+	pos.x = X_POS_MEM_COL;
+	pos.y = TEXT_SIZE + 4;
+
+	sfText_setString(renderText, "Memory snippet:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+	// Display the memory content surrounding our current pc
+	for (int i = state->pc - 10; i < state->pc + 10; i++) {
+		if (boundsCheckMemIndex(state, i)) {
+			if (i == state->pc) {
+				sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0));
+			}
+			else {
+				sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+			}
+
+			_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
+			_itoa(readMemory(state, i), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_MEM_COL;
+		}
+		pos.y += incY;
+	}
+
+	sfText_destroy(renderText);
+}
+
+void handleEvent(const sfEvent* evt, i8080State* state) {
+	switch (evt->type) {
+	case sfEvtClosed:
+		// Close request
+		state->valid = false;
+		break;
+
+	default:
+		//printf("Got unknown event from window\n");
+		break;
+	}
+}
+
+void initGraphics() {
+	sfVideoMode videoMode;
+	videoMode.width = 800;
+	videoMode.height = 600;
+
+	sfContextSettings contextSettings;
+	contextSettings.majorVersion = 3;
+	contextSettings.minorVersion = 2;
+	contextSettings.depthBits = 24;
+	contextSettings.stencilBits = 8;
+	contextSettings.antialiasingLevel = 0;
+
+	window = sfRenderWindow_create(videoMode, "i8080 Emulator", sfDefaultStyle, &contextSettings);
+
+	font = sfFont_createFromFile("arial.ttf");
+	if (font == NULL) {
+		log_fatal("Failed to load font");
+		exit(-1);
+	}
+}
+
+void closeGraphics() {
+	sfRenderWindow_close(window);
+	sfRenderWindow_destroy(window);
+
+	sfFont_destroy(font);
+}
