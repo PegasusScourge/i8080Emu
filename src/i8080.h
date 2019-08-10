@@ -27,3 +27,15 @@ void writeMemory(i8080State* state, int index, uint8_t value);
 
 // Sets the PC
 void setPC(i8080State* state, uint16_t v);
+
+// Sets the stack pointer
+void setSP(i8080State* state, uint16_t v);
+
+// Pushes a value onto the stack
+void pushStack(i8080State* state, uint16_t v);
+
+// Pops a value from the stack
+uint16_t popStack(i8080State* state);
+
+// Peaks at the top value from the stack but does not pop
+uint16_t peakStack(i8080State* state);

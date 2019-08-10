@@ -56,6 +56,30 @@ void setPC(i8080State* state, uint16_t v) {
 	}
 }
 
+void setSP(i8080State* state, uint16_t v) {
+	if (boundsCheckMemIndex(state, v)) {
+		state->sp = v;
+	}
+	else {
+		// ERROR
+	}
+}
+
+void pushStack(i8080State* state, uint16_t v) {
+	writeMemory(state, state->sp, (v & 0xFF00) >> 8);
+	writeMemory(state, state->sp - 1, v & 0x00FF);
+	setSP(state, state->sp - 2);
+}
+
+uint16_t peakStack(i8080State* state) {
+	return ((uint8_t)readMemory(state, state->sp + 2) << 8) + readMemory(state, state->sp + 1);
+}
+
+uint16_t popStack(i8080State* state) {
+	uint16_t stckVal = peakStack(state);
+	setSP(state, state->sp + 2);
+}
+
 bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
 	bool success = true;
 	bool pcShouldIncrement = true;
@@ -64,6 +88,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
 	uint8_t byte2 = 0;
 
 	uint16_t store16_1;
+	uint8_t store8_1;
 
 	// Load the extra bytes as needed
 	if (byteLen >= 2) {
@@ -76,10 +101,26 @@ bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
 	switch (opcode) {
 	case NOP: // Do nothing
 		break;
+	case MVI_B:
+		log_trace("[%04X] MVI_B(%02X) %02X", state->pc, MVI_B, byte1);
+		state->b = byte1;
+		break;
+	case LXI_SP:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // D16
+		log_trace("[%04X] LXI_SP(%02X) %04X (%02X %02X)", state->pc, LXI_SP, store16_1, byte1, byte2);
+		setSP(state, store16_1); // Set the sp to D16
+		break;
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JMP(%02X) %04X (%02X %02X)", state->pc, JMP, store16_1, byte1, byte2);
 		setPC(state, store16_1); // Set the pc to jmpPos
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
+	case CALL:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CALL(%02X) %04X (%02X %02X)", state->pc, CALL, store16_1, byte1, byte2);
+		pushStack(state, state->pc);
+		setPC(state, store16_1); // Set the pc to address
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	default:
