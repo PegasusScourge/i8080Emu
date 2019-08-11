@@ -213,7 +213,7 @@ char* decimal_to_binary(uint16_t n) {
 	return  pointer;
 }
 
-uint16_t makePSW(i8080State* state) {
+uint16_t getPSW(i8080State* state) {
 	uint16_t res = 0;
 	res += state->a << 8;
 	res += state->f.s << 7;
@@ -224,4 +224,31 @@ uint16_t makePSW(i8080State* state) {
 	res += state->f.p << 2;
 	res += state->f.one << 1;
 	return res;
+}
+
+uint16_t getBC(i8080State* state) {
+	return ((uint16_t)state->b << 8) + state->c;
+}
+
+uint16_t getDE(i8080State* state) {
+	return ((uint16_t)state->d << 8) + state->e;
+}
+
+uint16_t getHL(i8080State* state) {
+	return ((uint16_t)state->h << 8) + state->l;
+}
+
+void putBC(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
+	state->b = ubyte;
+	state->c = lbyte;
+}
+
+void putDE(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
+	state->d = ubyte;
+	state->e = lbyte;
+}
+
+void putHL(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
+	state->h = ubyte;
+	state->l = lbyte;
 }

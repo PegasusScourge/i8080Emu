@@ -105,19 +105,16 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case LXI_B: // put in BC D16
 		log_trace("[%04X] LXI_B(%02X) B:%02X C:%02X", state->pc, LXI_SP, byte2, byte1);
-		state->b = byte2;
-		state->c = byte1;
+		putBC(state, byte2, byte1);
 		break;
 	case STAX_B: // write value of A to memory[BC]
-		store16_1 = (state->b << 8) + state->c;
-		log_trace("[%04X] STAX_B(%02X) BC:%04X A:%02X", state->pc, STAX_B, store16_1, state->a);
-		writeMemory(state, store16_1, state->a);
+		log_trace("[%04X] STAX_B(%02X) BC:%04X A:%02X", state->pc, STAX_B, getBC(state), state->a);
+		writeMemory(state, getBC(state), state->a);
 		break;
 	case INX_B: // Increment BC
-		store16_1 = 1 + (state->b << 8) + state->c;
+		store16_1 = 1 + getBC(state);
 		log_trace("[%04X] INX_B(%02X)", state->pc, INX_B);
-		state->b = (store16_1 & 0xFF00) >> 8;
-		state->c = (store16_1 & 0x00FF);
+		putBC(state, (store16_1 & 0xFF00) >> 8, (store16_1 & 0x00FF));
 		break;
 	case INR_B: // Increment B
 		log_trace("[%04X] INR_B(%02X)", state->pc, INR_B);

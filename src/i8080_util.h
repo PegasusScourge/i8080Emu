@@ -356,4 +356,22 @@ bool shouldACFlag(uint8_t n);
 char* decimal_to_binary(uint16_t n);
 
 // Returns the PSW
-uint16_t makePSW(i8080State* state);
+uint16_t getPSW(i8080State* state);
+
+// returns the 16 bit register BC
+uint16_t getBC(i8080State* state);
+
+// returns the 16 bit register DE
+uint16_t getDE(i8080State* state);
+
+// returns the 16 bit register HL
+uint16_t getHL(i8080State* state);
+
+// Puts a value into BC
+void putBC(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+
+// Puts a value into DE
+void putDE(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+
+// Puts a value into HL
+void putHL(i8080State* state, uint8_t ubyte, uint8_t lbyte);
