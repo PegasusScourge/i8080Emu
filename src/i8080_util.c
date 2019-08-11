@@ -101,7 +101,7 @@ void reset8080(i8080State* state) {
 	state->l = 0;
 	state->sp = 0;
 	state->pc = 0;
-	state->clockFreqMHz = 0.005;
+	state->clockFreqMHz = 2.0;
 	state->waitCycles = 0;
 
 	// Set the flags
