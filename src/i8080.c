@@ -113,13 +113,13 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] STAX_B(%02X) BC:%04X A:%02X", state->pc, STAX_B, store16_1, state->a);
 		writeMemory(state, store16_1, state->a);
 		break;
-	case INX_B:
+	case INX_B: // Increment BC
 		store16_1 = 1 + (state->b << 8) + state->c;
 		log_trace("[%04X] INX_B(%02X)", state->pc, INX_B);
 		state->b = (store16_1 & 0xFF00) >> 8;
 		state->c = (store16_1 & 0x00FF);
 		break;
-	case INR_B:
+	case INR_B: // Increment B
 		log_trace("[%04X] INR_B(%02X)", state->pc, INR_B);
 		state->b = state->b + 1;
 		state->f.z = isZero(state->b);
@@ -127,7 +127,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->f.p = isParityEven(state->b);
 		state->f.ac = shouldACFlag(state->b);
 		break;
-	case DCR_B:
+	case DCR_B: // Decrement B
 		log_trace("[%04X] DCR_B(%02X)", state->pc, INR_B);
 		state->b = state->b - 1;
 		state->f.z = isZero(state->b);
@@ -135,7 +135,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->f.p = isParityEven(state->b);
 		state->f.ac = shouldACFlag(state->b);
 		break;
-	case MVI_B:
+	case MVI_B: // Put byte1 into B
 		log_trace("[%04X] MVI_B(%02X) %02X", state->pc, MVI_B, byte1);
 		state->b = byte1;
 		break;
@@ -143,7 +143,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] RLC(%02X) %02X", state->pc, RLC, state->a);
 		store8_1 = (state->a >> 7); // Get the 7th bit
 		state->f.c = store8_1; // Store it in the carry flag
-		state->a = state->a | store8_1; // Store the 7th bit in position
+		state->a = (state->a << 1) | store8_1; // Store the 7th bit in position
 		break;
 	case LXI_SP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // D16

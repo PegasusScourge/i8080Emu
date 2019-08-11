@@ -413,7 +413,7 @@ void utilTest() {
 
 	utilTest_prepNext(state, RLC, 0x00, 0x00); state->a = 0xF0; // Setup the command
 	cpuTick(state); // Execute command
-	success = state->a == 0xF1 && state->f.c == 1;
+	success = state->a == 0xE1 && state->f.c == 1;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test RLC\t(%02X)\t\t: [%s]\n", RLC, success ? "OK" : "FAIL"); // Print the result of the test
 
