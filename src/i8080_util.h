@@ -15,7 +15,7 @@ Utility functions and types
 // Boolean info
 #define true 1
 #define false 0
-#define bool int
+#define bool unsigned char
 
 // Const defs
 #define MHZ 1000000.0f
@@ -31,17 +31,18 @@ Utility functions and types
 // typedefs
 #define UINT8_MAX 0xFF
 typedef unsigned char uint8_t;
+typedef signed char int8_t;
 #define UINT16_MAX 0xFFFF
 typedef unsigned short uint16_t;
+typedef signed short int16_t;
 typedef struct flagRegister {
-	int s : 1; // sign flag
-	int z : 1; // zero flag
-	int a : 1; // auxiliary carry flag
-	#define ac a // a is also called ac (auxiliary carry flag)
-	int p : 1; // parity flag
-	int c : 1; // carry flag
-	int zero : 1; // always zero, bits 3 and 5
-	int one : 1; // always one, bit 1
+	unsigned int s : 1; // sign flag
+	unsigned int z : 1; // zero flag
+	unsigned int ac : 1; // auxiliary carry flag
+	unsigned int p : 1; // parity flag
+	unsigned int c : 1; // carry flag
+	unsigned int zero : 1; // always zero, bits 3 and 5
+	unsigned int one : 1; // always one, bit 1
 } flagRegister;
 typedef struct i8080State {
 	uint8_t a;
@@ -338,3 +339,21 @@ uint8_t getInstructionClockCycles(uint8_t opcode);
 
 // Returns the number of clock cycles an instruction takes if it fails
 uint8_t getFailedInstructionClockCycles(uint8_t opcode);
+
+// Returns if the parity of a number is even
+bool isParityEven(uint16_t n);
+
+// Returns if the number is zero
+bool isZero(uint16_t n);
+
+// Returns if the number is negative
+bool isNegative(int16_t n);
+
+// Returns if the ac flag should be set
+bool shouldACFlag(uint8_t n);
+
+// Takes a 16bit value and converts to binary
+char* decimal_to_binary(uint16_t n);
+
+// Returns the PSW
+uint16_t makePSW(i8080State* state);

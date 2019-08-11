@@ -28,6 +28,12 @@ void handleEvent(const sfEvent* evt, i8080State* state);
 // Render the state info for the window
 void renderStateInfo(i8080State* state, float accum, float frameTimeMillis);
 
+/* Test fuction defs */
+// Runs a batch test on the program to check each opcode
+void utilTest();
+// Preps the state for the next test opcode
+void utilTest_prepNext(i8080State* state, uint8_t opcode, uint8_t byte1, uint8_t byte2);
+
 // var defs
 sfRenderWindow* window = NULL; // window handle
 sfEvent cEvent; // Event container
@@ -71,6 +77,10 @@ int main(int argc, char** argv) {
 					printf("Invalid switch '%s': requires two arguments!\n", argv[i]);
 					return -1;
 				}
+			}
+			else if (strcmp("--test", argv[i]) == 0) {
+				utilTest();
+				return 0;
 			}
 		}
 	}
@@ -173,7 +183,7 @@ void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
 	pos.x = X_INIT_POS;
 	pos.y = TEXT_SIZE + 4;
 	int incY = TEXT_SIZE + 2;
-	int xSpace = TEXT_SIZE * 12;
+	int xSpace = TEXT_SIZE * 14;
 
 	char buf[80];
 
@@ -206,11 +216,15 @@ void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
 	sfText_setString(renderText, "sp:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	_itoa(state->sp, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
+	sfText_setString(renderText, "psw:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	sfText_setString(renderText, decimal_to_binary(makePSW(state))); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+	sfText_setString(renderText, "[accumu]SZ0A0P1C"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
 	pos.y += incY;
 	sfText_setString(renderText, "Wait cycles:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	_itoa(state->waitCycles, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Accumulator (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	sfText_setString(renderText, "Time accumulator (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	_gcvt(accum, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	sfText_setString(renderText, "Frame Time (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
@@ -307,7 +321,8 @@ void initGraphics() {
 
 	window = sfRenderWindow_create(videoMode, "i8080 Emulator", sfDefaultStyle, &contextSettings);
 
-	font = sfFont_createFromFile("arial.ttf");
+	//font = sfFont_createFromFile("arial.ttf");
+	font = sfFont_createFromFile("Consolas.ttf");
 	if (font == NULL) {
 		log_fatal("Failed to load font");
 		exit(-1);
@@ -319,4 +334,104 @@ void closeGraphics() {
 	sfRenderWindow_destroy(window);
 
 	sfFont_destroy(font);
+}
+
+void utilTest() {
+	i8080State* state = malloc(sizeof(i8080State));
+
+	if (state == NULL) {
+		log_fatal("Test protocol failure: unable to allocate for state");
+		exit(-1);
+	}
+
+	FILE* testLog = fopen("i8080_test.log", "w");
+	bool success = false;
+
+	int failedTests = 0;
+
+	// reset the state
+	init8080(state);
+
+	sfClock* timer = sfClock_create();
+	fprintf(testLog, "i8080 Test protocol.\n");
+
+	success = isZero(0);
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test isZero(0x00)=%i\t\t\t: [%s]\n", isZero(0), success ? "OK" : "FAIL");
+
+	success = !isZero(1);
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test isZero(0x01)=%i\t\t\t: [%s]\n", isZero(1), success ? "OK" : "FAIL");
+
+	success = isNegative(0xFF);
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test isNegative(0xFF)=%i\t\t: [%s]\n", isNegative(0xFF), success ? "OK" : "FAIL");
+
+	success = isParityEven(0xFF);
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test isParityEven(0xFF)=%i\t: [%s]\n", isParityEven(0xFF), success ? "OK" : "FAIL");
+
+	success = !isParityEven(0xFE);
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test isParityEven(0xFE)=%i\t: [%s]\n", isParityEven(0xFE), success ? "OK" : "FAIL");
+
+	utilTest_prepNext(state, LXI_B, 0x0F, 0xF0); // Setup the command
+	cpuTick(state); // Execute command
+	success = state->c == 0x0F && state->b == 0xF0; // Check success conditions
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test LXI_B\t(%02X)\t\t: [%s]\n", LXI_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, STAX_B, 0x00, 0x00); state->a = 128; // Setup the command
+	cpuTick(state); // Execute command
+	success = readMemory(state, 0xF00F) == 128;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test STAX_B\t(%02X)\t\t: [%s]\n", STAX_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, INX_B, 0x00, 0x00); state->a = 128; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->b == 0xF0 && state->c == 0x10;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test INX_B\t(%02X)\t\t: [%s]\n", INX_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, INR_B, 0x00, 0x00); state->b = 255; state->a = 128; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->b == 0x00 && state->f.z == 1 && state->f.s == 0 && state->f.p == 1 && state->f.ac == 1;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test INR_B\t(%02X)\t\t: [%s]\n", INR_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, DCR_B, 0x00, 0x00); state->a = 128; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->b == 0xFF && state->f.z == 0 && state->f.s == 1 && state->f.p == 1 && state->f.ac == 0;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test DCR_B\t(%02X)\t\t: [%s]\n", DCR_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, MVI_B, 0x42, 0x00); // Setup the command
+	cpuTick(state); // Execute command
+	success = state->b == 0x42;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test MVI_B\t(%02X)\t\t: [%s]\n", MVI_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, RLC, 0x00, 0x00); state->a = 0xF0; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->a == 0xF1 && state->f.c == 1;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test RLC\t(%02X)\t\t: [%s]\n", RLC, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// Output statistics
+	float elapsedTimeMs = sfTime_asMilliseconds(sfClock_getElapsedTime(timer));
+	float elapsedTimeSec = elapsedTimeMs / 1000.0f;
+	fprintf(testLog, "--------------------------------------------------\nTest complete!\nTime to complete test: %f ms\nTests failed: %i\n", elapsedTimeSec, failedTests);
+
+	// free the state
+	free(state);
+	// cloe test file
+	fclose(testLog);
+}
+
+void utilTest_prepNext(i8080State* state, uint8_t opcode, uint8_t byte1, uint8_t byte2) {
+	state->pc = 0;
+	state->waitCycles = 0;
+	state->memory[0] = opcode;
+	state->memory[1] = byte1;
+	state->memory[2] = byte2;
 }

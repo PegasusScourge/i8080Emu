@@ -14,7 +14,7 @@ CPU file
 void cpuTick(i8080State* state);
 
 // Executes an opcode and changes the state accordingly
-bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen);
+bool executeOpcode(i8080State* state, uint8_t opcode);
 
 // Outputs to the log that we have an unimplemented opcode
 void unimplementedOpcode(uint8_t opcode);

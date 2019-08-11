@@ -13,10 +13,9 @@ void cpuTick(i8080State* state) {
 	if (state->waitCycles == 0) {
 		// We don't need to wait cycles
 		uint8_t opcode = readMemory(state, state->pc);
-		int byteLen = getInstructionLength(opcode);
 
 		// Get the result of the opcode execution to determine the number of clock cycles we need to take
-		bool success = executeOpcode(state, opcode, byteLen);
+		bool success = executeOpcode(state, opcode);
 
 		// Put the correct wait time in clock cycles
 		state->waitCycles = success ? getInstructionClockCycles(opcode) : getFailedInstructionClockCycles(opcode);
@@ -81,9 +80,11 @@ uint16_t popStack(i8080State* state) {
 	return stckVal;
 }
 
-bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
+bool executeOpcode(i8080State* state, uint8_t opcode) {
 	bool success = true;
 	bool pcShouldIncrement = true;
+
+	int byteLen = getInstructionLength(opcode);
 
 	uint8_t byte1 = 0;
 	uint8_t byte2 = 0;
@@ -117,20 +118,32 @@ bool executeOpcode(i8080State* state, uint8_t opcode, int byteLen) {
 		log_trace("[%04X] INX_B(%02X)", state->pc, INX_B);
 		state->b = (store16_1 & 0xFF00) >> 8;
 		state->c = (store16_1 & 0x00FF);
+		break;
 	case INR_B:
 		log_trace("[%04X] INR_B(%02X)", state->pc, INR_B);
 		state->b = state->b + 1;
+		state->f.z = isZero(state->b);
+		state->f.s = isNegative(state->b);
+		state->f.p = isParityEven(state->b);
+		state->f.ac = shouldACFlag(state->b);
+		break;
 	case DCR_B:
-		log_trace("[%04X] INR_B(%02X)", state->pc, INR_B);
+		log_trace("[%04X] DCR_B(%02X)", state->pc, INR_B);
 		state->b = state->b - 1;
+		state->f.z = isZero(state->b);
+		state->f.s = isNegative(state->b);
+		state->f.p = isParityEven(state->b);
+		state->f.ac = shouldACFlag(state->b);
+		break;
 	case MVI_B:
 		log_trace("[%04X] MVI_B(%02X) %02X", state->pc, MVI_B, byte1);
 		state->b = byte1;
 		break;
 	case RLC: // Bitshift and place the dropped bit in the carry flag and bit 0 of the new number
-		store8_1 = state->a >> 7; // Get the 7th bit
+		log_trace("[%04X] RLC(%02X) %02X", state->pc, RLC, state->a);
+		store8_1 = (state->a >> 7); // Get the 7th bit
 		state->f.c = store8_1; // Store it in the carry flag
-		state->a = state->a & store8_1; // Store the 7th bit in position
+		state->a = state->a | store8_1; // Store the 7th bit in position
 		break;
 	case LXI_SP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // D16

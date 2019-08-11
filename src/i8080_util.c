@@ -105,7 +105,7 @@ void reset8080(i8080State* state) {
 	state->waitCycles = 0;
 
 	// Set the flags
-	state->f.a = 0;
+	state->f.ac = 0;
 	state->f.c = 0;
 	state->f.one = 1;
 	state->f.p = 0;
@@ -166,4 +166,62 @@ uint8_t getFailedInstructionClockCycles(uint8_t opcode) {
 	return 0;
 }
 
+bool isParityEven(uint16_t n) {
+	int numOneBits = 0;
+	for (int i = 0; i < 16; i++) {
+		uint16_t v = (n >> i) & 0b0000000000000001;
+		numOneBits += v;
+	}
+	//log_trace("numOneBits = %i", numOneBits);
+	return numOneBits % 2 == 0; // If even, return true
+}
 
+bool isZero(uint16_t n) {
+	return n == 0;
+}
+
+bool isNegative(int16_t n) {
+	return (0x80 == (n & 0x80));
+}
+
+bool shouldACFlag(uint8_t n) {
+	return (n & 0xF) == 0;
+}
+
+char* decimal_to_binary(uint16_t n) {
+	int c, d, count;
+	char* pointer;
+
+	count = 0;
+	pointer = (char*)malloc(16 + 1);
+
+	if (pointer == NULL)
+		return NULL;
+
+	for (c = 15; c >= 0; c--) {
+		d = n >> c;
+
+		if (d & 1)
+			* (pointer + count) = 1 + '0';
+		else
+			*(pointer + count) = 0 + '0';
+
+		count++;
+	}
+	*(pointer + count) = '\0';
+
+	return  pointer;
+}
+
+uint16_t makePSW(i8080State* state) {
+	uint16_t res = 0;
+	res += state->a << 8;
+	res += state->f.s << 7;
+	res += state->f.z << 6;
+	res += state->f.zero << 5;
+	res += state->f.ac << 4;
+	res += state->f.zero << 3;
+	res += state->f.p << 2;
+	res += state->f.one << 1;
+	return res;
+}

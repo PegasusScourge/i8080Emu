@@ -1,6 +1,13 @@
 # i8080 Emulator project
 This is an emulator for the intel 8080 processor
 
+Command line switches:
+ - `-h` displays the help message
+ - `-l <file> <memIndex>` loads a ROM into memory starting at memIndex
+ - `--test` performs a self-test diagnostic and outputs the result in `i8080_test.log`
+ - `--help` alias for `-h`
+ - `--load` alias for `-l`
+
 ### Sources
  - logging utility: https://github.com/rxi/log.c
  - opcode table: http://www.pastraiser.com/cpu/i8080/i8080_opcodes.html
