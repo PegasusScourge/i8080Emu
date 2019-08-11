@@ -27,6 +27,9 @@
     <ClCompile Include="src\log.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\i8080_test.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\i8080_util.h">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\i8080_test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

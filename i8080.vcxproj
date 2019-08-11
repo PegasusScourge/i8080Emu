@@ -21,11 +21,13 @@
   <ItemGroup>
     <ClCompile Include="src\i8080.c" />
     <ClCompile Include="src\i8080Emu.c" />
+    <ClCompile Include="src\i8080_test.c" />
     <ClCompile Include="src\i8080_util.c" />
     <ClCompile Include="src\log.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\i8080.h" />
+    <ClInclude Include="src\i8080_test.h" />
     <ClInclude Include="src\i8080_util.h" />
     <ClInclude Include="src\log.h" />
   </ItemGroup>

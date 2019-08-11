@@ -119,18 +119,12 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case INR_B: // Increment B
 		log_trace("[%04X] INR_B(%02X)", state->pc, INR_B);
 		state->b = state->b + 1;
-		state->f.z = isZero(state->b);
-		state->f.s = isNegative(state->b);
-		state->f.p = isParityEven(state->b);
-		state->f.ac = shouldACFlag(state->b);
+		setZSPAC(state, state->b);
 		break;
 	case DCR_B: // Decrement B
 		log_trace("[%04X] DCR_B(%02X)", state->pc, INR_B);
 		state->b = state->b - 1;
-		state->f.z = isZero(state->b);
-		state->f.s = isNegative(state->b);
-		state->f.p = isParityEven(state->b);
-		state->f.ac = shouldACFlag(state->b);
+		setZSPAC(state, state->b);
 		break;
 	case MVI_B: // Put byte1 into B
 		log_trace("[%04X] MVI_B(%02X) %02X", state->pc, MVI_B, byte1);
@@ -138,10 +132,13 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RLC: // Bitshift and place the dropped bit in the carry flag and bit 0 of the new number
 		log_trace("[%04X] RLC(%02X) %02X", state->pc, RLC, state->a);
-		store8_1 = (state->a >> 7); // Get the 7th bit
-		state->f.c = store8_1; // Store it in the carry flag
-		state->a = (state->a << 1) | store8_1; // Store the 7th bit in position
+		state->a = rotateBitwiseLeft(state, state->a);
 		break;
+	case DAD_B:
+		log_trace("[%04X] DAD_B(%02X) %04X", state->pc, DAD_B, getBC(state));
+		putHL16(state, addCarry16(state, getHL(state), getBC(state)));
+		break;
+
 	case LXI_SP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // D16
 		log_trace("[%04X] LXI_SP(%02X) %04X (%02X %02X)", state->pc, LXI_SP, store16_1, byte1, byte2);

@@ -32,9 +32,14 @@ Utility functions and types
 #define UINT8_MAX 0xFF
 typedef unsigned char uint8_t;
 typedef signed char int8_t;
+
 #define UINT16_MAX 0xFFFF
 typedef unsigned short uint16_t;
 typedef signed short int16_t;
+
+typedef unsigned int uint32_t;
+typedef int int32_t;
+
 typedef struct flagRegister {
 	unsigned int s : 1; // sign flag
 	unsigned int z : 1; // zero flag
@@ -369,9 +374,33 @@ uint16_t getHL(i8080State* state);
 
 // Puts a value into BC
 void putBC(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void putBC16(i8080State* state, uint16_t);
 
 // Puts a value into DE
 void putDE(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void putDE16(i8080State* state, uint16_t);
 
 // Puts a value into HL
 void putHL(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void putHL16(i8080State* state, uint16_t);
+
+// Sets the Z, S, P, AC flags accordingly
+void setZSPAC(i8080State* state, uint8_t v);
+
+// Rotates the number left one bit and stores the dropped bit in bit 0 and the carry flag
+uint8_t rotateBitwiseLeft(i8080State* state, uint8_t v);
+
+// Rotates the number right one bit and stores the dropped bit in bit 7 and the carry flag
+uint8_t rotateBitwiseRight(i8080State* state, uint8_t v);
+
+// Adds two 16 bit numbers and sets the carry flag as appropriate
+uint16_t addCarry16(i8080State* state, uint16_t a, uint16_t b);
+
+// Adds two 8 bit numbers and sets the carry flag as needed
+uint8_t addCarry(i8080State* state, uint8_t a, uint8_t b);
+
+// Subtracts two 16 bit numbers and sets the carry flag as appropriate
+uint16_t subCarry16(i8080State* state, uint16_t a, uint16_t b);
+
+// Subtracts two 8 bit numbers and sets the carry flag as appropriate
+uint8_t subCarry(i8080State* state, uint8_t a, uint8_t b);
