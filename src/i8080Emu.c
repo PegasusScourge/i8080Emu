@@ -74,7 +74,22 @@ int main(int argc, char** argv) {
 					loadFile(argv[i + 1], state.memory, i8080_MEMORY_SIZE, strtol(argv[i+2], NULL, 10));
 				}
 				else {
-					printf("Invalid switch '%s': requires two arguments!\n", argv[i]);
+					log_fatal("Invalid switch '%s': requires two arguments!", argv[i]);
+					return -1;
+				}
+			}
+			else if (strcmp("-s", argv[i]) == 0 || strcmp("--speed", argv[i]) == 0) {
+				if ((i + 1) < argc) {
+					float tgtFreq = atof(argv[i + 1]);
+					if (tgtFreq <= 0) {
+						log_error("Invalid switch %s: argument is 0 or negative", argv[i]);
+					}
+					else {
+						state.clockFreqMHz = tgtFreq;
+					}
+				}
+				else {
+					log_fatal("Invalid switch '%s': requires two arguments!", argv[i]);
 					return -1;
 				}
 			}
