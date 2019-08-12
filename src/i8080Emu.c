@@ -21,18 +21,22 @@ Main file
 
 /* Function defs */
 // Initialise the graphics
-void initGraphics();
+void initGraphics(unsigned int width, unsigned int height);
 // Close the graphics
 void closeGraphics();
 // Handle the events
 void handleEvent(const sfEvent* evt, i8080State* state);
 // Render the state info for the window
 void renderStateInfo(i8080State* state, float accum, float frameTimeMillis);
+// Update the video buffer
+void updateVideoBuffer(i8080State* state, sfImage* img);
 
 // var defs
 sfRenderWindow* window = NULL; // window handle
 sfEvent cEvent; // Event container
 sfFont* font = NULL;
+sfSprite* videoSprite = NULL;
+sfImage* videoImg = NULL;
 
 #define TEXT_SIZE 14
 
@@ -158,7 +162,7 @@ int main(int argc, char** argv) {
 	// Init the graphics
 	log_info("--- Init graphics ---");
 	log_info("videoMemory: %04X, dimensions (%i, %i)", state.vid.startAddress, state.vid.width, state.vid.height);
-	initGraphics();
+	initGraphics(state.vid.width, state.vid.height);
 	log_info("-- Graphics init complete ---");
 
 	// Create the timer
@@ -190,7 +194,17 @@ int main(int argc, char** argv) {
 			accumulator -= cycleTime;
 		}
 
-		sfRenderWindow_clear(window, sfColor_fromRGB(0, 0, 0));
+		// Update the video buffer
+		updateVideoBuffer(&state, videoImg);
+
+		sfRenderWindow_clear(window, sfColor_fromRGB(0, 0, 100));
+
+		// Render the video buffer
+		sfTexture* videoTexture = sfTexture_createFromImage(videoImg, NULL);
+		sfSprite_setTexture(videoSprite, videoTexture, false);
+		sfRenderWindow_drawSprite(window, videoSprite, NULL);
+		sfTexture_destroy(videoTexture);
+
 		renderStateInfo(&state, accumPrev, elapsedTime);
 
 		// Display the window
@@ -347,6 +361,17 @@ void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
 	sfText_destroy(renderText);
 }
 
+void updateVideoBuffer(i8080State* state, sfImage* img) {
+	sfColor on = sfColor_fromRGB(255, 255, 255);
+	sfColor off = sfColor_fromRGB(0, 0, 0);
+
+	for (int x = 0; x < state->vid.width; x++) {
+		for (int y = 0; y < state->vid.height; y++) {
+			sfImage_setPixel(img, x, y, readMemory(state, state->vid.startAddress + x + (y*state->vid.width)) ? on : off);
+		}
+	}
+}
+
 void handleEvent(const sfEvent* evt, i8080State* state) {
 	switch (evt->type) {
 	case sfEvtClosed:
@@ -360,7 +385,7 @@ void handleEvent(const sfEvent* evt, i8080State* state) {
 	}
 }
 
-void initGraphics() {
+void initGraphics(unsigned int width, unsigned int height) {
 	sfVideoMode videoMode;
 	videoMode.width = 800;
 	videoMode.height = 600;
@@ -380,6 +405,13 @@ void initGraphics() {
 		log_fatal("Failed to load font");
 		exit(-1);
 	}
+
+	videoImg = sfImage_create(width, height);
+	videoSprite = sfSprite_create();
+	sfVector2f pos;
+	pos.x = (((float)videoMode.width) / 2) - (((float)width) / 2);
+	pos.y = (((float)videoMode.height) / 2) - (((float)height) / 2);
+	sfSprite_setPosition(videoSprite, pos);
 }
 
 void closeGraphics() {
@@ -387,4 +419,7 @@ void closeGraphics() {
 	sfRenderWindow_destroy(window);
 
 	sfFont_destroy(font);
+
+	sfImage_destroy(videoImg);
+	sfSprite_destroy(videoSprite);
 }
