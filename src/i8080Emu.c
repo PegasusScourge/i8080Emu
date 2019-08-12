@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
 			else if (strcmp("-vd", argv[i]) == 0 || strcmp("--video:dimensions", argv[i]) == 0) {
 				if ((i + 2) < argc) {
 					uint16_t x = atoi(argv[i + 1]);
-					uint16_t y = atoi(argv[i + 1]);
+					uint16_t y = atoi(argv[i + 2]);
 					if (x < 0 || y < 0) {
 						log_fatal("Invalid dimensions, cannot be less than 0! (%i, %i)", x, y);
 						return -1;
@@ -157,6 +157,7 @@ int main(int argc, char** argv) {
 
 	// Init the graphics
 	log_info("--- Init graphics ---");
+	log_info("videoMemory: %04X, dimensions (%i, %i)", state.vid.startAddress, state.vid.width, state.vid.height);
 	initGraphics();
 	log_info("-- Graphics init complete ---");
 
@@ -292,6 +293,14 @@ void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
 
 	sfText_setString(renderText, "instr len:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	_itoa(getInstructionLength(readMemory(state, state->pc)), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	pos.y += incY;
+	sfText_setString(renderText, "Video Memory Loc:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->vid.startAddress, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "Video Memory Dims:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->vid.width, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 4;
+	_itoa(state->vid.height, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	#define X_POS_MEM_COL 450
 	pos.x = X_POS_MEM_COL;
