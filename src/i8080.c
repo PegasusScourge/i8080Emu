@@ -783,6 +783,53 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		setZSPAC(state, state->a);
 		break;
 
+		// ANDs go here (0xA0)
+
+		// XORs go here (0xA8)
+
+		// ORs go here (0xB0)
+
+	case CMP_B: // takes B from A
+		log_trace("[%04X] CMP_B(%02X)", state->pc, CMP_B);
+		store8_1 = subCarry(state, state->a, state->b);
+		setZSPAC(state, store8_1);
+		break;
+	case CMP_C: // takes C from A
+		log_trace("[%04X] CMP_C(%02X)", state->pc, CMP_C);
+		store8_1 = subCarry(state, state->a, state->c);
+		setZSPAC(state, store8_1);
+		break;
+	case CMP_D: // takes D from A
+		log_trace("[%04X] CMP_D(%02X)", state->pc, CMP_D);
+		store8_1 = subCarry(state, state->a, state->d);
+		setZSPAC(state, store8_1);
+		break;
+	case CMP_E: // takes E from A
+		log_trace("[%04X] CMP_E(%02X)", state->pc, CMP_E);
+		store8_1 = subCarry(state, state->a, state->e);
+		setZSPAC(state, store8_1);
+		break;
+	case CMP_H: // takes H from A
+		log_trace("[%04X] CMP_H(%02X)", state->pc, CMP_H);
+		store8_1 = subCarry(state, state->a, state->h);
+		setZSPAC(state, store8_1);
+		break;
+	case CMP_L: // takes L from A
+		log_trace("[%04X] CMP_L(%02X)", state->pc, CMP_L);
+		store8_1 = subCarry(state, state->a, state->l);
+		setZSPAC(state, store8_1);
+		break;
+	case CMP_M: // takes memory[HL] from A
+		log_trace("[%04X] CMP_M(%02X)", state->pc, CMP_M);
+		store8_1 = subCarry(state, state->a, readMemory(state, getHL(state)));
+		setZSPAC(state, store8_1);
+		break;
+	case CMP_A: // takes A from A
+		log_trace("[%04X] CMP_A(%02X)", state->pc, CMP_A);
+		store8_1 = subCarry(state, state->a, state->a);
+		setZSPAC(state, store8_1);
+		break;
+
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JMP(%02X) %04X (%02X %02X)", state->pc, JMP, store16_1, byte1, byte2);
