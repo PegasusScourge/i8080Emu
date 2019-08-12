@@ -126,7 +126,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		setZSPAC(state, state->b);
 		break;
 	case DCR_B: // Decrement B
-		log_trace("[%04X] DCR_B(%02X)", state->pc, INR_B);
+		log_trace("[%04X] DCR_B(%02X)", state->pc, DCR_B);
 		state->b = state->b - 1;
 		setZSPAC(state, state->b);
 		break;
@@ -138,24 +138,24 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] RLC(%02X) %02X", state->pc, RLC, state->a);
 		state->a = rotateBitwiseLeft(state, state->a);
 		break;
-	case DAD_B:
+	case DAD_B: // HL += BC
 		log_trace("[%04X] DAD_B(%02X) %04X", state->pc, DAD_B, getBC(state));
 		putHL16(state, addCarry16(state, getHL(state), getBC(state)));
 		break;
-	case LDAX_B:
+	case LDAX_B: // Load memory pointed to by BC into A
 		log_trace("[%04X] LDAX_B(%02X) %02X", state->pc, LDAX_B, readMemory(state, getBC(state)));
 		state->a = readMemory(state, getBC(state));
 		break;
-	case DCX_B:
+	case DCX_B: // Decrement BC by 1
 		log_trace("[%04X] DCX_B(%02X) %04X", state->pc, DCX_B, getBC(state));
 		putBC16(state, getBC(state) - 1);
 		break;
-	case INR_C:
+	case INR_C: // Increment C by 1
 		log_trace("[%04X] INR_C(%02X) %02X", state->pc, INR_C, state->c);
 		state->c = state->c + 1;
 		setZSPAC(state, state->c);
 		break;
-	case DCR_C:
+	case DCR_C: // Decrement C by 1
 		log_trace("[%04X] DCR_C(%02X) %02X", state->pc, DCR_C, state->c);
 		state->c = state->c - 1;
 		setZSPAC(state, state->c);
@@ -167,6 +167,38 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case RRC: // Bitshift and place the dropped bit in the carry flag and bit 7 of the new number
 		log_trace("[%04X] RRC(%02X) %02X", state->pc, RRC, state->a);
 		state->a = rotateBitwiseRight(state, state->a);
+		break;
+	case LXI_D: // put in DE D16
+		log_trace("[%04X] LXI_D(%02X) D:%02X E:%02X", state->pc, LXI_D, byte2, byte1);
+		putDE(state, byte2, byte1);
+		break;
+	case STAX_D: // write value of A to memory[DE]
+		log_trace("[%04X] STAX_D(%02X) BC:%04X A:%02X", state->pc, STAX_D, getDE(state), state->a);
+		writeMemory(state, getDE(state), state->a);
+		break;
+	case INX_D: // Increment DE
+		log_trace("[%04X] INX_D(%02X)", state->pc, INX_D);
+		putDE16(state, 1 + getDE(state));
+		break;
+	case INR_D: // Increment D
+		log_trace("[%04X] INR_D(%02X)", state->pc, INR_D);
+		state->d = state->d + 1;
+		setZSPAC(state, state->d);
+		break;
+	case DCR_D: // Decrement D
+		log_trace("[%04X] DCR_D(%02X)", state->pc, DCR_D);
+		state->d = state->d - 1;
+		setZSPAC(state, state->d);
+		break;
+	case MVI_D: // Put byte1 into D
+		log_trace("[%04X] MVI_D(%02X) %02X", state->pc, MVI_D, byte1);
+		state->d = byte1;
+		break;
+	case RAL: // Bitshift left 1 and use CY as bit 0, and store dropped bit 7 in CY after
+		log_trace("[%04X] RAL(%02X) %02X", state->pc, RAL, state->a);
+		store8_1 = (state->a >> 7); // Get the 7th bit
+		state->a = (state->a << 1) | state->f.c; // Store the CY in 0th bit
+		state->f.c = store8_1; // Store 7th bit the carry flag
 		break;
 
 	case LXI_SP:

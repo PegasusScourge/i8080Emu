@@ -266,10 +266,10 @@ void putHL16(i8080State* state, uint16_t b) {
 }
 
 void setZSPAC(i8080State* state, uint8_t v) {
-	state->f.z = isZero(state->b);
-	state->f.s = isNegative(state->b);
-	state->f.p = isParityEven(state->b);
-	state->f.ac = shouldACFlag(state->b);
+	state->f.z = isZero(v);
+	state->f.s = isNegative(v);
+	state->f.p = isParityEven(v);
+	state->f.ac = shouldACFlag(v);
 }
 
 uint8_t rotateBitwiseLeft(i8080State* state, uint8_t v) {
