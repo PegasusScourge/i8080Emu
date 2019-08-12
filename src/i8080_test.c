@@ -59,6 +59,16 @@ void utilTest() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test subCarry16(0x02, 0x03)=%i\t: [%s]\n", subCarry16(state, 0x02, 0x03), success ? "OK" : "FAIL");
 
+	addCarry(state, 0xFF, 0x1);
+	success = state->f.c;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test addCarry(0xFF, 0x01)=%i\t\t\t: [%s]\n", addCarry(state, 0xFF, 0x1), success ? "OK" : "FAIL");
+
+	subCarry(state, 0x02, 0x03);
+	success = state->f.c;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test subCarry(0x02, 0x03)=%i\t\t: [%s]\n", subCarry(state, 0x02, 0x03), success ? "OK" : "FAIL");
+
 	fprintf(testLog, "\n--- instruction tests ---\n");
 
 	utilTest_prepNext(state, LXI_B, 0x0F, 0xF0); // Setup the command

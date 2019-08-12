@@ -622,6 +622,86 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] MOV_AA(%02X) (British car recovery joke or screaming?)", state->pc, MOV_AA);
 		state->a = state->a;
 		break;
+	case ADD_B: // Adds B to A
+		log_trace("[%04X] ADD_B(%02X)", state->pc, ADD_B);
+		state->a = addCarry(state, state->a, state->b);
+		setZSPAC(state, state->a);
+		break;
+	case ADD_C: // Adds C to A
+		log_trace("[%04X] ADD_C(%02X)", state->pc, ADD_C);
+		state->a = addCarry(state, state->a, state->c);
+		setZSPAC(state, state->a);
+		break;
+	case ADD_D: // Adds D to A
+		log_trace("[%04X] ADD_D(%02X)", state->pc, ADD_D);
+		state->a = addCarry(state, state->a, state->d);
+		setZSPAC(state, state->a);
+		break;
+	case ADD_E: // Adds E to A
+		log_trace("[%04X] ADD_E(%02X)", state->pc, ADD_E);
+		state->a = addCarry(state, state->a, state->e);
+		setZSPAC(state, state->a);
+		break;
+	case ADD_H: // Adds H to A
+		log_trace("[%04X] ADD_H(%02X)", state->pc, ADD_H);
+		state->a = addCarry(state, state->a, state->h);
+		setZSPAC(state, state->a);
+		break;
+	case ADD_L: // Adds L to A
+		log_trace("[%04X] ADD_L(%02X)", state->pc, ADD_L);
+		state->a = addCarry(state, state->a, state->l);
+		setZSPAC(state, state->a);
+		break;
+	case ADD_M: // Adds memory[HL] to A
+		log_trace("[%04X] ADD_M(%02X)", state->pc, ADD_M);
+		state->a = addCarry(state, state->a, readMemory(state, getHL(state)));
+		setZSPAC(state, state->a);
+		break;
+	case ADD_A: // Adds A to A
+		log_trace("[%04X] ADD_A(%02X)", state->pc, ADD_A);
+		state->a = addCarry(state, state->a, state->a);
+		setZSPAC(state, state->a);
+		break;
+	case ADC_B: // Adds B to A
+		log_trace("[%04X] ADC_B(%02X)", state->pc, ADC_B);
+		state->a = addCarry(state, addCarry(state, state->a, state->b), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case ADC_C: // Adds C to A
+		log_trace("[%04X] ADC_C(%02X)", state->pc, ADC_C);
+		state->a = addCarry(state, addCarry(state, state->a, state->c), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case ADC_D: // Adds D to A
+		log_trace("[%04X] ADC_D(%02X)", state->pc, ADC_D);
+		state->a = addCarry(state, addCarry(state, state->a, state->d), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case ADC_E: // Adds E to A
+		log_trace("[%04X] ADC_E(%02X)", state->pc, ADC_E);
+		state->a = addCarry(state, addCarry(state, state->a, state->e), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case ADC_H: // Adds H to A
+		log_trace("[%04X] ADC_H(%02X)", state->pc, ADC_H);
+		state->a = addCarry(state, addCarry(state, state->a, state->h), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case ADC_L: // Adds L to A
+		log_trace("[%04X] ADC_L(%02X)", state->pc, ADC_L);
+		state->a = addCarry(state, addCarry(state, state->a, state->l), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case ADC_M: // Adds memory[HL] to A
+		log_trace("[%04X] ADC_M(%02X)", state->pc, ADC_M);
+		state->a = addCarry(state, addCarry(state, state->a, readMemory(state, getHL(state))), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case ADC_A: // Adds A to A
+		log_trace("[%04X] ADC_A(%02X)", state->pc, ADC_A);
+		state->a = addCarry(state, addCarry(state, state->a, state->a), state->f.c);
+		setZSPAC(state, state->a);
+		break;
 
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
