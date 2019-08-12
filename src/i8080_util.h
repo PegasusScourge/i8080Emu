@@ -62,7 +62,7 @@ typedef struct i8080State {
 	uint8_t* memory;
 	int memorySize;
 	float clockFreqMHz;
-	int valid : 1;
+	unsigned int valid : 1;
 	int waitCycles;
 	struct flagRegister f;
 } i8080State;
@@ -185,7 +185,7 @@ enum i8080Opcode {
 	MOV_AB		= 0x78,
 	MOV_AC		= 0x79,
 	MOV_AD		= 0x7a,
-	MOV_AE		= 0x7a,
+	MOV_AE		= 0x7b,
 	MOV_AH		= 0x7c,
 	MOV_AL		= 0x7d,
 	MOV_AM		= 0x7e,

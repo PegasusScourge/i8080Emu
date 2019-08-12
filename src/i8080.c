@@ -365,6 +365,263 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] CMC(%02X)", state->pc, CMC);
 		state->f.c = ~state->f.c;
 		break;
+	case MOV_BB:
+		log_trace("[%04X] MOV_BB(%02X)", state->pc, MOV_BB);
+		state->b = state->b;
+		break;
+	case MOV_BC:
+		log_trace("[%04X] MOV_BC(%02X)", state->pc, MOV_BC);
+		state->b = state->c;
+		break;
+	case MOV_BD:
+		log_trace("[%04X] MOV_BD(%02X)", state->pc, MOV_BD);
+		state->b = state->d;
+		break;
+	case MOV_BE:
+		log_trace("[%04X] MOV_BE(%02X)", state->pc, MOV_BE);
+		state->b = state->e;
+		break;
+	case MOV_BH:
+		log_trace("[%04X] MOV_BH(%02X)", state->pc, MOV_BH);
+		state->b = state->h;
+		break;
+	case MOV_BL:
+		log_trace("[%04X] MOV_BL(%02X)", state->pc, MOV_BL);
+		state->b = state->l;
+		break;
+	case MOV_BM:
+		log_trace("[%04X] MOV_BM(%02X) %04X", state->pc, MOV_BM, getHL(state));
+		state->b = readMemory(state, getHL(state));
+		break;
+	case MOV_BA:
+		log_trace("[%04X] MOV_BA(%02X)", state->pc, MOV_BA);
+		state->b = state->a;
+		break;
+	case MOV_CB:
+		log_trace("[%04X] MOV_CB(%02X)", state->pc, MOV_CB);
+		state->c = state->b;
+		break;
+	case MOV_CC:
+		log_trace("[%04X] MOV_CC(%02X)", state->pc, MOV_CC);
+		state->c = state->c;
+		break;
+	case MOV_CD:
+		log_trace("[%04X] MOV_CD(%02X)", state->pc, MOV_CD);
+		state->c = state->d;
+		break;
+	case MOV_CE:
+		log_trace("[%04X] MOV_CE(%02X)", state->pc, MOV_CE);
+		state->c = state->e;
+		break;
+	case MOV_CH:
+		log_trace("[%04X] MOV_CH(%02X)", state->pc, MOV_CH);
+		state->c = state->h;
+		break;
+	case MOV_CL:
+		log_trace("[%04X] MOV_CL(%02X)", state->pc, MOV_CL);
+		state->c = state->l;
+		break;
+	case MOV_CM:
+		log_trace("[%04X] MOV_CM(%02X) %04X", state->pc, MOV_CM, getHL(state));
+		state->c = readMemory(state, getHL(state));
+		break;
+	case MOV_CA:
+		log_trace("[%04X] MOV_CA(%02X)", state->pc, MOV_CA);
+		state->c = state->a;
+		break;
+	case MOV_DB:
+		log_trace("[%04X] MOV_DB(%02X)", state->pc, MOV_DB);
+		state->d = state->b;
+		break;
+	case MOV_DC:
+		log_trace("[%04X] MOV_DC(%02X)", state->pc, MOV_DC);
+		state->d = state->c;
+		break;
+	case MOV_DD:
+		log_trace("[%04X] MOV_CD(%02X)", state->pc, MOV_DD);
+		state->d = state->d;
+		break;
+	case MOV_DE:
+		log_trace("[%04X] MOV_DE(%02X)", state->pc, MOV_DE);
+		state->d = state->e;
+		break;
+	case MOV_DH:
+		log_trace("[%04X] MOV_DH(%02X)", state->pc, MOV_DH);
+		state->d = state->h;
+		break;
+	case MOV_DL:
+		log_trace("[%04X] MOV_DL(%02X)", state->pc, MOV_DL);
+		state->d = state->l;
+		break;
+	case MOV_DM:
+		log_trace("[%04X] MOV_DM(%02X) %04X", state->pc, MOV_DM, getHL(state));
+		state->d = readMemory(state, getHL(state));
+		break;
+	case MOV_DA:
+		log_trace("[%04X] MOV_DA(%02X)", state->pc, MOV_DA);
+		state->d = state->a;
+		break;
+	case MOV_EB:
+		log_trace("[%04X] MOV_EB(%02X)", state->pc, MOV_EB);
+		state->e = state->b;
+		break;
+	case MOV_EC:
+		log_trace("[%04X] MOV_EC(%02X)", state->pc, MOV_EC);
+		state->e = state->c;
+		break;
+	case MOV_ED:
+		log_trace("[%04X] MOV_ED(%02X)", state->pc, MOV_ED);
+		state->e = state->d;
+		break;
+	case MOV_EE:
+		log_trace("[%04X] MOV_EE(%02X)", state->pc, MOV_EE);
+		state->e = state->e;
+		break;
+	case MOV_EH:
+		log_trace("[%04X] MOV_EH(%02X)", state->pc, MOV_EH);
+		state->e = state->h;
+		break;
+	case MOV_EL:
+		log_trace("[%04X] MOV_EL(%02X)", state->pc, MOV_EL);
+		state->e = state->l;
+		break;
+	case MOV_EM:
+		log_trace("[%04X] MOV_EM(%02X) %04X", state->pc, MOV_EM, getHL(state));
+		state->e = readMemory(state, getHL(state));
+		break;
+	case MOV_EA:
+		log_trace("[%04X] MOV_EA(%02X) (REEEEEE)", state->pc, MOV_EA);
+		state->e = state->a;
+		break;
+	case MOV_HB:
+		log_trace("[%04X] MOV_HB(%02X)", state->pc, MOV_HB);
+		state->h = state->b;
+		break;
+	case MOV_HC:
+		log_trace("[%04X] MOV_HC(%02X)", state->pc, MOV_HC);
+		state->h = state->c;
+		break;
+	case MOV_HD:
+		log_trace("[%04X] MOV_HD(%02X)", state->pc, MOV_HD);
+		state->h = state->d;
+		break;
+	case MOV_HE:
+		log_trace("[%04X] MOV_HE(%02X)", state->pc, MOV_HE);
+		state->h = state->e;
+		break;
+	case MOV_HH:
+		log_trace("[%04X] MOV_HH(%02X)", state->pc, MOV_HH);
+		state->h = state->h;
+		break;
+	case MOV_HL:
+		log_trace("[%04X] MOV_HL(%02X)", state->pc, MOV_HL);
+		state->h = state->l;
+		break;
+	case MOV_HM:
+		log_trace("[%04X] MOV_HM(%02X) %04X", state->pc, MOV_HM, getHL(state));
+		state->h = readMemory(state, getHL(state));
+		break;
+	case MOV_HA:
+		log_trace("[%04X] MOV_HA(%02X) (HA!)", state->pc, MOV_HA);
+		state->e = state->a;
+		break;
+	case MOV_LB:
+		log_trace("[%04X] MOV_LB(%02X)", state->pc, MOV_LB);
+		state->l = state->b;
+		break;
+	case MOV_LC:
+		log_trace("[%04X] MOV_LC(%02X)", state->pc, MOV_LC);
+		state->l = state->c;
+		break;
+	case MOV_LD:
+		log_trace("[%04X] MOV_LD(%02X)", state->pc, MOV_LD);
+		state->l = state->d;
+		break;
+	case MOV_LE:
+		log_trace("[%04X] MOV_LE(%02X)", state->pc, MOV_LE);
+		state->l = state->e;
+		break;
+	case MOV_LH:
+		log_trace("[%04X] MOV_LH(%02X)", state->pc, MOV_LH);
+		state->l = state->h;
+		break;
+	case MOV_LL:
+		log_trace("[%04X] MOV_LL(%02X)", state->pc, MOV_LL);
+		state->l = state->l;
+		break;
+	case MOV_LM:
+		log_trace("[%04X] MOV_LM(%02X) %04X", state->pc, MOV_LM, getHL(state));
+		state->l = readMemory(state, getHL(state));
+		break;
+	case MOV_LA:
+		log_trace("[%04X] MOV_LA(%02X) (la la la la la la la)", state->pc, MOV_LA);
+		state->l = state->a;
+		break;
+	case MOV_MB:
+		log_trace("[%04X] MOV_MB(%02X)", state->pc, MOV_MB);
+		writeMemory(state, getHL(state), state->b);
+		break;
+	case MOV_MC:
+		log_trace("[%04X] MOV_MC(%02X)", state->pc, MOV_MC);
+		writeMemory(state, getHL(state), state->c);
+		break;
+	case MOV_MD:
+		log_trace("[%04X] MOV_MD(%02X)", state->pc, MOV_MD);
+		writeMemory(state, getHL(state), state->d);
+		break;
+	case MOV_ME:
+		log_trace("[%04X] MOV_ME(%02X)", state->pc, MOV_ME);
+		writeMemory(state, getHL(state), state->e);
+		break;
+	case MOV_MH:
+		log_trace("[%04X] MOV_MH(%02X)", state->pc, MOV_MH);
+		writeMemory(state, getHL(state), state->h);
+		break;
+	case MOV_ML:
+		log_trace("[%04X] MOV_ML(%02X)", state->pc, MOV_ML);
+		writeMemory(state, getHL(state), state->h);
+		break;
+	case MOV_MA:
+		log_trace("[%04X] MOV_MA(%02X)", state->pc, MOV_MA);
+		writeMemory(state, getHL(state), state->a);
+		break;
+	case HLT:
+		// HALT THE PROGRAM?
+		log_info("[%04X] HLT(%02X)", state->pc, HLT);
+		state->valid = false;
+		break;
+	case MOV_AB:
+		log_trace("[%04X] MOV_AB(%02X)", state->pc, MOV_AB);
+		state->a = state->b;
+		break;
+	case MOV_AC:
+		log_trace("[%04X] MOV_AC(%02X)", state->pc, MOV_AC);
+		state->a = state->c;
+		break;
+	case MOV_AD:
+		log_trace("[%04X] MOV_AD(%02X)", state->pc, MOV_AD);
+		state->a = state->d;
+		break;
+	case MOV_AE:
+		log_trace("[%04X] MOV_AE(%02X)", state->pc, MOV_AE);
+		state->a = state->e;
+		break;
+	case MOV_AH:
+		log_trace("[%04X] MOV_AH(%02X)", state->pc, MOV_AH);
+		state->a = state->h;
+		break;
+	case MOV_AL:
+		log_trace("[%04X] MOV_AL(%02X)", state->pc, MOV_AL);
+		state->a = state->l;
+		break;
+	case MOV_AM:
+		log_trace("[%04X] MOV_AM(%02X) %04X", state->pc, MOV_AM, getHL(state));
+		state->l = readMemory(state, getHL(state));
+		break;
+	case MOV_AA:
+		log_trace("[%04X] MOV_AA(%02X) (British car recovery joke or screaming?)", state->pc, MOV_AA);
+		state->a = state->a;
+		break;
 
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
