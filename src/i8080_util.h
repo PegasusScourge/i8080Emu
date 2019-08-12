@@ -49,6 +49,11 @@ typedef struct flagRegister {
 	unsigned int zero : 1; // always zero, bits 3 and 5
 	unsigned int one : 1; // always one, bit 1
 } flagRegister;
+typedef struct videoMemoryInfo {
+	uint16_t startAddress;
+	uint16_t width;
+	uint16_t height;
+} videoMemoryInfo;
 typedef struct i8080State {
 	uint8_t a;
 	uint8_t b;
@@ -65,6 +70,7 @@ typedef struct i8080State {
 	unsigned int valid : 1;
 	int waitCycles;
 	struct flagRegister f;
+	struct videoMemoryInfo vid;
 } i8080State;
 
 enum i8080Opcode {

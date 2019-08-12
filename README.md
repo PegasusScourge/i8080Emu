@@ -5,10 +5,14 @@ Command line switches:
  - ```-h``` displays the help message
  - ```-l <file> <memIndex>``` loads a ROM into memory starting at memIndex
  - ```-s <mhz>``` sets the clock speed of the emulator
+ - ```-va <address>``` sets the start of VRAM for the emulator
+ - ```-vd <width> <height>``` sets the dimensions of the output display
  - ```--test``` performs a self-test diagnostic and outputs the result in ```i8080_test.log```
  - ```--help``` alias for ```-h```
  - ```--load``` alias for ```-l```
  - ```--speed``` alias for ```-s```
+ - ```--video:address``` alias for ```-va```
+ - ```--video:dimensions``` alias for ```-vd```
 
 ### Sources
  - logging utility: https://github.com/rxi/log.c

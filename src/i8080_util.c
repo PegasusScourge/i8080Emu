@@ -112,6 +112,11 @@ void reset8080(i8080State* state) {
 	state->f.s = 0;
 	state->f.z = 0;
 	state->f.zero = 0;
+
+	// Set the video memory flags
+	state->vid.startAddress = 0;
+	state->vid.height = 64;
+	state->vid.width = 64;
 }
 
 int getConsoleLine(char* buf, int bufLen) {

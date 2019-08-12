@@ -84,7 +84,41 @@ int main(int argc, char** argv) {
 					}
 				}
 				else {
-					log_fatal("Invalid switch '%s': requires two arguments!", argv[i]);
+					log_fatal("Invalid switch '%s': requires one argument!", argv[i]);
+					return -1;
+				}
+			}
+			else if (strcmp("-va", argv[i]) == 0 || strcmp("--video:address", argv[i]) == 0) {
+				if ((i + 1) < argc) {
+					uint16_t tgtAddress = atoi(argv[i + 1]);
+					if (tgtAddress < 0 || tgtAddress > i8080_MEMORY_SIZE) {
+						log_fatal("Invalid memory address, require between 0 and %i", i8080_MEMORY_SIZE);
+						return -1;
+					}
+					else {
+						state.vid.startAddress = tgtAddress;
+					}
+				}
+				else {
+					log_fatal("Invalid switch '%s': requires one argument!", argv[i]);
+					return -1;
+				}
+			}
+			else if (strcmp("-vd", argv[i]) == 0 || strcmp("--video:dimensions", argv[i]) == 0) {
+				if ((i + 2) < argc) {
+					uint16_t x = atoi(argv[i + 1]);
+					uint16_t y = atoi(argv[i + 1]);
+					if (x < 0 || y < 0) {
+						log_fatal("Invalid dimensions, cannot be less than 0! (%i, %i)", x, y);
+						return -1;
+					}
+					else {
+						state.vid.width = x;
+						state.vid.height = y;
+					}
+				}
+				else {
+					log_fatal("Invalid switch '%s': requires one argument!", argv[i]);
 					return -1;
 				}
 			}
