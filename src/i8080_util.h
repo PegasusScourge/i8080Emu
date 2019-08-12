@@ -405,6 +405,9 @@ void putHL16(i8080State* state, uint16_t);
 // Sets the Z, S, P, AC flags accordingly
 void setZSPAC(i8080State* state, uint8_t v);
 
+// Uses an 8 bit var to reconstruct the flags
+void putFlags(i8080State* state, uint8_t fv);
+
 // Rotates the number left one bit and stores the dropped bit in bit 0 and the carry flag
 uint8_t rotateBitwiseLeft(i8080State* state, uint8_t v);
 

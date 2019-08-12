@@ -280,6 +280,14 @@ void setZSPAC(i8080State* state, uint8_t v) {
 	state->f.ac = shouldACFlag(v);
 }
 
+void putFlags(i8080State* state, uint8_t fv) {
+	state->f.s = (fv & 0x80) >> 7;
+	state->f.z = (fv & 0x40) >> 6;
+	state->f.ac = (fv & 0x10) >> 4;
+	state->f.p = (fv & 0x04) >> 2;
+	state->f.c = (fv & 0x01);
+}
+
 uint8_t rotateBitwiseLeft(i8080State* state, uint8_t v) {
 	uint8_t store8_1 = (v >> 7); // Get the 7th bit
 	state->f.c = store8_1; // Store it in the carry flag

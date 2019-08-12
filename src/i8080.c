@@ -1017,7 +1017,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_0: // Call $0x0
 		log_trace("[%04X] RST_0(%02X)", state->pc, RST_0);
-		executeCALL(state, 0x00);
+		executeCALL(state, INTERRUPT_0);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RZ:
@@ -1064,7 +1064,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_1:
 		log_trace("[%04X] RST_1(%02X)", state->pc, RST_1);
-		executeCALL(state, 0x08);
+		executeCALL(state, INTERRUPT_1);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RNC:
@@ -1081,7 +1081,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case JNC:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
-		log_trace("[%04X] JNZ(%02X) %04X (%02X %02X) : %i", state->pc, JNZ, store16_1, byte1, byte2, !state->f.c);
+		log_trace("[%04X] JNC(%02X) %04X (%02X %02X) : %i", state->pc, JNC, store16_1, byte1, byte2, !state->f.c);
 		if (!state->f.c) {
 			setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
@@ -1110,7 +1110,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_2:
 		log_trace("[%04X] RST_2(%02X)", state->pc, RST_2);
-		executeCALL(state, 0x10);
+		executeCALL(state, INTERRUPT_2);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RC:
@@ -1121,7 +1121,222 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		}
 		success = state->f.c;
 		break;
-
+	case JC:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
+		log_trace("[%04X] JC(%02X) %04X (%02X %02X) : %i", state->pc, JC, store16_1, byte1, byte2, state->f.c);
+		if (state->f.c) {
+			setPC(state, store16_1); // Set the pc to jmpPos
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
+	case IN: // TODO
+		log_warn("[%04X] IN(%02X)", state->pc, IN);
+		break;
+	case CC:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CC(%02X) %04X (%02X %02X) : %i", state->pc, CC, store16_1, byte1, byte2, state->f.c);
+		if (state->f.c) {
+			executeCALL(state, store16_1);
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		success = state->f.c;
+		break;
+	case SBI: // takes D8 from A
+		log_trace("[%04X] SUI(%02X) %02X", state->pc, SUI, byte1);
+		state->a = subCarry(state, subCarry(state, state->a, byte1), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case RST_3:
+		log_trace("[%04X] RST_3(%02X)", state->pc, RST_3);
+		executeCALL(state, INTERRUPT_3);
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
+	case RPO:
+		log_trace("[%04X] RPO(%02X)", state->pc, RPO);
+		if (!state->f.p) {
+			pcShouldIncrement = false;
+			executeRET(state);
+		}
+		success = !state->f.p;
+		break;
+	case POP_H:
+		log_trace("[%04X] POP_H(%02X)", state->pc, POP_H);
+		putHL16(state, popStack(state));
+		break;
+	case JPO:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
+		log_trace("[%04X] JPO(%02X) %04X (%02X %02X) : %i", state->pc, JPO, store16_1, byte1, byte2, !state->f.p);
+		if (!state->f.p) {
+			setPC(state, store16_1); // Set the pc to jmpPos
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
+	case XTHL:
+		log_trace("[%04X] XTHL(%02X)", state->pc, XTHL);
+		store16_1 = popStack(state);
+		pushStack(state, getHL(state));
+		putHL16(state, store16_1);
+		break;
+	case CPO:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CPO(%02X) %04X (%02X %02X) : %i", state->pc, CPO, store16_1, byte1, byte2, !state->f.p);
+		if (!state->f.p) {
+			executeCALL(state, store16_1);
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		success = state->f.p;
+		break;
+	case PUSH_H:
+		log_trace("[%04X] PUSH_H(%02X) %04X", state->pc, PUSH_H, getHL(state));
+		pushStack(state, getHL(state));
+		break;
+	case ANI:
+		log_trace("[%04X] ANI(%02X) %02X", state->pc, ANI, byte1);
+		state->a = state->a & byte1;
+		setZSPAC(state, state->a);
+		break;
+	case RST_4:
+		log_trace("[%04X] RST_4(%02X)", state->pc, RST_4);
+		executeCALL(state, INTERRUPT_4);
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
+	case RPE:
+		log_trace("[%04X] RPE(%02X)", state->pc, RPE);
+		if (state->f.p) {
+			pcShouldIncrement = false;
+			executeRET(state);
+		}
+		success = state->f.p;
+		break;
+	case PCHL:
+		log_trace("[%04X] PCHL(%02X)", state->pc, PCHL);
+		setPC(state, getHL(state));
+		pcShouldIncrement = false;
+		break;
+	case JPE:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
+		log_trace("[%04X] JPE(%02X) %04X (%02X %02X) : %i", state->pc, JPE, store16_1, byte1, byte2, state->f.p);
+		if (state->f.p) {
+			setPC(state, store16_1); // Set the pc to jmpPos
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
+	case XCHG:
+		log_trace("[%04X] XCHG(%02X)", state->pc, XCHG);
+		store16_1 = getDE(state);
+		putDE16(state, getHL(state));
+		putHL16(state, store16_1);
+		break;
+	case CPE:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CPE(%02X) %04X (%02X %02X) : %i", state->pc, CPE, store16_1, byte1, byte2, state->f.p);
+		if (state->f.p) {
+			executeCALL(state, store16_1);
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		success = state->f.p;
+		break;
+	case XRI:
+		log_trace("[%04X] XRI(%02X) %02X", state->pc, XRI, byte1);
+		state->a = state->a ^ byte1;
+		setZSPAC(state, state->a);
+		break;
+	case RST_5:
+		log_trace("[%04X] RST_5(%02X)", state->pc, RST_5);
+		executeCALL(state, INTERRUPT_5);
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
+	case RP:
+		log_trace("[%04X] RP(%02X)", state->pc, RP);
+		if (!state->f.s) {
+			pcShouldIncrement = false;
+			executeRET(state);
+		}
+		success = !state->f.s;
+		break;
+	case POP_PSW:
+		log_trace("[%04X] POP_PSW(%02X)", state->pc, POP_PSW);
+		store16_1 = popStack(state);
+		state->a = (store16_1 & 0xFF00) >> 8;
+		putFlags(state, store16_1 & 0xFF);
+		break;
+	case JP:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
+		log_trace("[%04X] JP(%02X) %04X (%02X %02X) : %i", state->pc, JP, store16_1, byte1, byte2, !state->f.s);
+		if (!state->f.s) {
+			setPC(state, store16_1); // Set the pc to jmpPos
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
+	case DI:
+		log_info("[%04X] DI(%02X)", state->pc, DI);
+		state->f.ien = 0;
+		break;
+	case CP:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CP(%02X) %04X (%02X %02X) : %i", state->pc, CP, store16_1, byte1, byte2, !state->f.s);
+		if (!state->f.s) {
+			executeCALL(state, store16_1);
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		success = !state->f.s;
+		break;
+	case PUSH_PSW:
+		log_trace("[%04X] PUSH_PSW(%02X) %04X", state->pc, PUSH_PSW, getPSW(state));
+		pushStack(state, getPSW(state));
+		break;
+	case ORI:
+		log_trace("[%04X] ORI(%02X) %02X", state->pc, ORI, byte1);
+		state->a = state->a | byte1;
+		setZSPAC(state, state->a);
+	case RST_6:
+		log_trace("[%04X] RST_6(%02X)", state->pc, RST_6);
+		executeCALL(state, INTERRUPT_6);
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
+	case RM:
+		log_trace("[%04X] RM(%02X)", state->pc, RM);
+		if (state->f.s) {
+			pcShouldIncrement = false;
+			executeRET(state);
+		}
+		success = state->f.s;
+		break;
+	case SPHL:
+		log_trace("[%04X] SPHL(%02X)", state->pc, SPHL);
+		setSP(state, getHL(state));
+		break;
+	case JM:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
+		log_trace("[%04X] JM(%02X) %04X (%02X %02X) : %i", state->pc, JM, store16_1, byte1, byte2, state->f.s);
+		if (state->f.s) {
+			setPC(state, store16_1); // Set the pc to jmpPos
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
+	case EI:
+		log_info("[%04X] EI(%02X)", state->pc, EI);
+		state->f.ien = 1;
+		break;
+	case CM:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CM(%02X) %04X (%02X %02X) : %i", state->pc, CM, store16_1, byte1, byte2, state->f.s);
+		if (state->f.s) {
+			executeCALL(state, store16_1);
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		success = state->f.s;
+		break;
+	case CPI:
+		log_trace("[%04X] CMP_A(%02X) %02X", state->pc, CMP_A, byte1);
+		store8_1 = subCarry(state, state->a, byte1);
+		setZSPAC(state, store8_1);
+		break;
+	case RST_7:
+		log_trace("[%04X] RST_7(%02X)", state->pc, RST_7);
+		executeCALL(state, INTERRUPT_7);
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
 	default:
 		unimplementedOpcode(opcode);
 		break;
