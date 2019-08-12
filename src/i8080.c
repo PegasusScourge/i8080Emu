@@ -234,6 +234,38 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->f.c = store8_1; // Store it in the carry flag
 		state->a = (state->a >> 1) | store8_2; // Store the 7th bit in position
 		break;
+	case LXI_H: // put in HL D16
+		log_trace("[%04X] LXI_H(%02X) H:%02X L:%02X", state->pc, LXI_H, byte2, byte1);
+		putHL(state, byte2, byte1);
+		break;
+	case SHLD: // write value of HL to memory[store16_1]
+		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
+		log_trace("[%04X] SHLD(%02X) %04X HL:%04X", state->pc, SHLD, store16_1, getHL(state));
+		writeMemory(state, store16_1, state->l);
+		writeMemory(state, store16_1 + 1, state->h);
+		break;
+	case INX_H: // Increment HL
+		log_trace("[%04X] INX_H(%02X)", state->pc, INX_H);
+		putHL16(state, 1 + getHL(state));
+		break;
+	case INR_H: // Increment H
+		log_trace("[%04X] INR_H(%02X)", state->pc, INR_H);
+		state->h = state->h + 1;
+		setZSPAC(state, state->h);
+		break;
+	case DCR_H: // Decrement D
+		log_trace("[%04X] DCR_H(%02X)", state->pc, DCR_H);
+		state->h = state->h - 1;
+		setZSPAC(state, state->h);
+		break;
+	case MVI_H: // Put byte1 into H
+		log_trace("[%04X] MVI_H(%02X) %02X", state->pc, MVI_H, byte1);
+		state->h = byte1;
+		break;
+	case DAA:
+		// Special, throw a warning but NOP
+		log_warn("[%04X] DAA(%02X) Special code: not implemented", state->pc, DAA);
+		break;
 
 	case LXI_SP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // D16
