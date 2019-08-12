@@ -84,6 +84,16 @@ uint16_t popStack(i8080State* state) {
 	return stckVal;
 }
 
+void executeRET(i8080State* state) {
+	uint16_t stckVal = popStack(state);
+	uint8_t returningOpcode = readMemory(state, stckVal);
+	uint16_t pcInc = getInstructionLength(returningOpcode);
+
+	log_debug("executeRET; stckVal: %04X, retOpcode: %02X, pcInc: %04X", stckVal, returningOpcode, pcInc);
+
+	setPC(state, stckVal + pcInc);
+}
+
 bool executeOpcode(i8080State* state, uint8_t opcode) {
 	bool success = true;
 	bool pcShouldIncrement = true;
@@ -829,13 +839,78 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store8_1 = subCarry(state, state->a, state->a);
 		setZSPAC(state, store8_1);
 		break;
-
+	case RNZ:
+		log_trace("[%04X] RNZ(%02X)", state->pc, RNZ);
+		if (!state->f.z) {
+			pcShouldIncrement = false;
+			executeRET(state);
+		}
+		success = !state->f.z;
+		break;
+	case POP_B:
+		log_trace("[%04X] POP_B(%02X)", state->pc, POP_B);
+		putBC16(state, popStack(state));
+		break;
+	case JNZ:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
+		log_trace("[%04X] JNZ(%02X) %04X (%02X %02X) : %i", state->pc, JNZ, store16_1, byte1, byte2, !state->f.z);
+		if (!state->f.z) {
+			setPC(state, store16_1); // Set the pc to jmpPos
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JMP(%02X) %04X (%02X %02X)", state->pc, JMP, store16_1, byte1, byte2);
 		setPC(state, store16_1); // Set the pc to jmpPos
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
+	case CNZ:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CNZ(%02X) %04X (%02X %02X) : %i", state->pc, CNZ, store16_1, byte1, byte2, !state->f.z);
+		if (!state->f.z) {
+			pushStack(state, state->pc);
+			setPC(state, store16_1); // Set the pc to address
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
+	case PUSH_B:
+		log_trace("[%04X] PUSH_B(%02X) %04X", state->pc, PUSH_B, getBC(state));
+		pushStack(state, getBC(state));
+		break;
+	case ADI: // Adds D8 to A
+		log_trace("[%04X] ADI(%02X) %02X", state->pc, ADI, byte1);
+		state->a = addCarry(state, state->a, byte1);
+		setZSPAC(state, state->a);
+		break;
+	case RST_0: // Call $0x0
+		log_trace("[%04X] RST_0(%02X)", state->pc, RST_0);
+		pushStack(state, state->pc);
+		setPC(state, 0x00); // Set the pc to address
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
+	case RZ:
+		log_trace("[%04X] RZ(%02X)", state->pc, RZ);
+		if (state->f.z) {
+			pcShouldIncrement = false;
+			executeRET(state);
+		}
+		success = state->f.z;
+		break;
+	case RET:
+		log_trace("[%04X] RET(%02X)", state->pc, RET);
+		pcShouldIncrement = false;
+		executeRET(state);
+		break;
+	case JZ:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
+		log_trace("[%04X] JZ(%02X) %04X (%02X %02X) : %i", state->pc, JZ, store16_1, byte1, byte2, !state->f.z);
+		if (state->f.z) {
+			setPC(state, store16_1); // Set the pc to jmpPos
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
+
 	case CALL:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CALL(%02X) %04X (%02X %02X)", state->pc, CALL, store16_1, byte1, byte2);

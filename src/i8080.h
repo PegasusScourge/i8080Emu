@@ -39,3 +39,6 @@ uint16_t popStack(i8080State* state);
 
 // Peaks at the top value from the stack but does not pop
 uint16_t peakStack(i8080State* state);
+
+// Causes the processor to RETURN. DO NOT increment PC before/after calling
+void executeRET(i8080State* state);
