@@ -1,7 +1,17 @@
 #pragma once
+/*
+
+i8080_test.h
+
+Test protocol
+
+*/
+
+
 #include "i8080.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <sfml/System/Clock.h>
 

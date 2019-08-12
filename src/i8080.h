@@ -20,10 +20,10 @@ bool executeOpcode(i8080State* state, uint8_t opcode);
 void unimplementedOpcode(uint8_t opcode);
 
 // Read the memory at index
-uint8_t readMemory(i8080State* state, int index);
+uint8_t readMemory(i8080State* state, uint16_t index);
 
 // Writes to memory at the index
-void writeMemory(i8080State* state, int index, uint8_t value);
+void writeMemory(i8080State* state, uint16_t index, uint8_t value);
 
 // Sets the PC
 void setPC(i8080State* state, uint16_t v);

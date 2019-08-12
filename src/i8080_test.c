@@ -1,3 +1,11 @@
+/*
+
+i8080_test.c
+
+Test protocol
+
+*/
+
 #include "i8080_test.h"
 
 void utilTest() {
@@ -100,6 +108,42 @@ void utilTest() {
 	success = getHL(state) == 0x0 && state->f.c == 1;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DAD_B\t(%02X)\t\t: [%s]\n", DAD_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, LDAX_B, LDAX_B, 0x00); putBC16(state, 0x1); // Setup the command
+	cpuTick(state); // Execute command
+	success = state->a == LDAX_B;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test LDAX_B\t(%02X)\t\t: [%s]\n", LDAX_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, DCX_B, 0x00, 0x00); putBC16(state, 0x1); // Setup the command
+	cpuTick(state); // Execute command
+	success = getBC(state) == 0x00;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test DCX_B\t(%02X)\t\t: [%s]\n", DCX_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, INR_C, 0x00, 0x00); state->c = 0x1; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->c == 0x02;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test INR_C\t(%02X)\t\t: [%s]\n", INR_C, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, DCR_C, 0x00, 0x00); state->c = 0x2; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->c == 0x01;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test DCR_C\t(%02X)\t\t: [%s]\n", DCR_C, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, MVI_C, 0x42, 0x00); // Setup the command
+	cpuTick(state); // Execute command
+	success = state->c == 0x42;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test MVI_C\t(%02X)\t\t: [%s]\n", MVI_C, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, RRC, 0x00, 0x00); state->a = 0x01; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->a == 0x80 && state->f.c == 1;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test RRC\t(%02X)\t\t: [%s]\n", RRC, success ? "OK" : "FAIL"); // Print the result of the test
 
 	// Output statistics
 	float elapsedTimeMs = sfTime_asMilliseconds(sfClock_getElapsedTime(timer));

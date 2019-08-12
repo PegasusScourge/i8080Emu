@@ -31,18 +31,22 @@ void cpuTick(i8080State* state) {
 	}
 }
 
-uint8_t readMemory(i8080State* state, int index) {
+uint8_t readMemory(i8080State* state, uint16_t index) {
 	// The bounds checking function raises any necessary flags in case of error
 	if (boundsCheckMemIndex(state, index)) {
 		return state->memory[index];
 	}
+	log_error("Attempted to read memory location %i (out of bounds)", index);
 	return 0;
 }
 
-void writeMemory(i8080State* state, int index, uint8_t val) {
+void writeMemory(i8080State* state, uint16_t index, uint8_t val) {
 	// The bounds checking function raises any necessary flags in case of error
 	if (boundsCheckMemIndex(state, index)) {
 		state->memory[index] = val;
+	}
+	else {
+		log_error("Attempted to set memory location %i (out of bounds) to %i", index, val);
 	}
 }
 
@@ -51,7 +55,7 @@ void setPC(i8080State* state, uint16_t v) {
 		state->pc = v;
 	}
 	else {
-		// ERROR
+		log_error("Attempted to set PC to %i which is out of bounds", v);
 	}
 }
 
@@ -60,7 +64,7 @@ void setSP(i8080State* state, uint16_t v) {
 		state->sp = v;
 	}
 	else {
-		// ERROR
+		log_error("Attempted to set SP to %i which is out of bounds", v);
 	}
 }
 
@@ -137,6 +141,32 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case DAD_B:
 		log_trace("[%04X] DAD_B(%02X) %04X", state->pc, DAD_B, getBC(state));
 		putHL16(state, addCarry16(state, getHL(state), getBC(state)));
+		break;
+	case LDAX_B:
+		log_trace("[%04X] LDAX_B(%02X) %02X", state->pc, LDAX_B, readMemory(state, getBC(state)));
+		state->a = readMemory(state, getBC(state));
+		break;
+	case DCX_B:
+		log_trace("[%04X] DCX_B(%02X) %04X", state->pc, DCX_B, getBC(state));
+		putBC16(state, getBC(state) - 1);
+		break;
+	case INR_C:
+		log_trace("[%04X] INR_C(%02X) %02X", state->pc, INR_C, state->c);
+		state->c = state->c + 1;
+		setZSPAC(state, state->c);
+		break;
+	case DCR_C:
+		log_trace("[%04X] DCR_C(%02X) %02X", state->pc, DCR_C, state->c);
+		state->c = state->c - 1;
+		setZSPAC(state, state->c);
+		break;
+	case MVI_C: // Put byte1 into C
+		log_trace("[%04X] MVI_C(%02X) %02X", state->pc, MVI_C, byte1);
+		state->c = byte1;
+		break;
+	case RRC: // Bitshift and place the dropped bit in the carry flag and bit 7 of the new number
+		log_trace("[%04X] RRC(%02X) %02X", state->pc, RRC, state->a);
+		state->a = rotateBitwiseRight(state, state->a);
 		break;
 
 	case LXI_SP:
