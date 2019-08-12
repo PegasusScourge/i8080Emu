@@ -702,6 +702,86 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->a = addCarry(state, addCarry(state, state->a, state->a), state->f.c);
 		setZSPAC(state, state->a);
 		break;
+	case SUB_B: // takes B from A
+		log_trace("[%04X] SUB_B(%02X)", state->pc, SUB_B);
+		state->a = subCarry(state, state->a, state->b);
+		setZSPAC(state, state->a);
+		break;
+	case SUB_C: // takes C from A
+		log_trace("[%04X] SUB_C(%02X)", state->pc, SUB_C);
+		state->a = subCarry(state, state->a, state->c);
+		setZSPAC(state, state->a);
+		break;
+	case SUB_D: // takes D from A
+		log_trace("[%04X] SUB_D(%02X)", state->pc, SUB_D);
+		state->a = subCarry(state, state->a, state->d);
+		setZSPAC(state, state->a);
+		break;
+	case SUB_E: // takes E from A
+		log_trace("[%04X] SUB_E(%02X)", state->pc, SUB_E);
+		state->a = subCarry(state, state->a, state->e);
+		setZSPAC(state, state->a);
+		break;
+	case SUB_H: // takes H from A
+		log_trace("[%04X] SUB_H(%02X)", state->pc, SUB_H);
+		state->a = subCarry(state, state->a, state->h);
+		setZSPAC(state, state->a);
+		break;
+	case SUB_L: // takes L from A
+		log_trace("[%04X] SUB_L(%02X)", state->pc, SUB_L);
+		state->a = subCarry(state, state->a, state->l);
+		setZSPAC(state, state->a);
+		break;
+	case SUB_M: // takes memory[HL] from A
+		log_trace("[%04X] SUB_M(%02X)", state->pc, SUB_M);
+		state->a = subCarry(state, state->a, readMemory(state, getHL(state)));
+		setZSPAC(state, state->a);
+		break;
+	case SUB_A: // takes A from A
+		log_trace("[%04X] SUB_A(%02X)", state->pc, SUB_A);
+		state->a = subCarry(state, state->a, state->a);
+		setZSPAC(state, state->a);
+		break;
+	case SBB_B:
+		log_trace("[%04X] SBB_B(%02X)", state->pc, SBB_B);
+		state->a = subCarry(state, subCarry(state, state->a, state->b), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case SBB_C:
+		log_trace("[%04X] SBB_C(%02X)", state->pc, SBB_C);
+		state->a = subCarry(state, subCarry(state, state->a, state->c), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case SBB_D:
+		log_trace("[%04X] SBB_D(%02X)", state->pc, SBB_D);
+		state->a = subCarry(state, subCarry(state, state->a, state->d), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case SBB_E:
+		log_trace("[%04X] SBB_E(%02X)", state->pc, SBB_E);
+		state->a = subCarry(state, subCarry(state, state->a, state->e), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case SBB_H:
+		log_trace("[%04X] SBB_H(%02X)", state->pc, SBB_H);
+		state->a = subCarry(state, subCarry(state, state->a, state->h), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case SBB_L:
+		log_trace("[%04X] SBB_L(%02X)", state->pc, SBB_L);
+		state->a = subCarry(state, subCarry(state, state->a, state->l), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case SBB_M:
+		log_trace("[%04X] SBB_M(%02X)", state->pc, SBB_M);
+		state->a = subCarry(state, subCarry(state, state->a, readMemory(state, getHL(state))), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case SBB_A:
+		log_trace("[%04X] SBB_A(%02X)", state->pc, SBB_A);
+		state->a = subCarry(state, subCarry(state, state->a, state->a), state->f.c);
+		setZSPAC(state, state->a);
+		break;
 
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
