@@ -210,7 +210,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->a = readMemory(state, getDE(state));
 		break;
 	case DCX_D: // Decrement DE by 1
-		log_trace("[%04X] DCX_D(%02X) %04X", state->pc, DCX_D, getBC(state));
+		log_trace("[%04X] DCX_D(%02X) %04X", state->pc, DCX_D, getDE(state));
 		putDE16(state, getDE(state) - 1);
 		break;
 	case INR_E: // Increment E by 1
@@ -265,6 +265,38 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case DAA:
 		// Special, throw a warning but NOP
 		log_warn("[%04X] DAA(%02X) Special code: not implemented", state->pc, DAA);
+		break;
+	case DAD_H: // HL += HL
+		log_trace("[%04X] DAD_H(%02X) %04X", state->pc, DAD_H, getHL(state));
+		putHL16(state, addCarry16(state, getHL(state), getHL(state)));
+		break;
+	case LHLD: // Load L with memory[store16_1] and H with memory[store16_1 + 1]
+		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
+		log_trace("[%04X] LHLD(%02X) %04X", state->pc, LHLD, store16_1);
+		state->l = readMemory(state, store16_1);
+		state->h = readMemory(state, store16_1 + 1);
+		break;
+	case DCX_H: // Decrement HL by 1
+		log_trace("[%04X] DCX_H(%02X) %04X", state->pc, DCX_H, getHL(state));
+		putHL16(state, getHL(state) - 1);
+		break;
+	case INR_L: // Increment L by 1
+		log_trace("[%04X] INR_L(%02X) %02X", state->pc, INR_L, state->e);
+		state->l = state->l + 1;
+		setZSPAC(state, state->l);
+		break;
+	case DCR_L: // Decrement L by 1
+		log_trace("[%04X] DCR_L(%02X) %02X", state->pc, DCR_L, state->e);
+		state->l = state->l - 1;
+		setZSPAC(state, state->l);
+		break;
+	case MVI_L: // Put byte1 into L
+		log_trace("[%04X] MVI_L(%02X) %02X", state->pc, MVI_L, byte1);
+		state->l = byte1;
+		break;
+	case CMA: // a set to bitwise not of a
+		log_trace("[%04X] CMA(%02X) %02X", state->pc, CMA, state->a);
+		state->a = ~state->a;
 		break;
 
 	case LXI_SP:

@@ -231,8 +231,6 @@ void utilTest() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test RAR\t(%02X)\t\t: [%s]\n", RAR, success ? "OK" : "FAIL"); // Print the result of the test
 
-	// note
-
 	utilTest_prepNext(state, LXI_H, 0x0F, 0xF0); // Setup the command
 	cpuTick(state); // Execute command
 	success = state->l == 0x0F && state->h == 0xF0; // Check success conditions
@@ -269,6 +267,49 @@ void utilTest() {
 	success = state->h == 0x42;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test MVI_H\t(%02X)\t\t: [%s]\n", MVI_H, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// note
+	utilTest_prepNext(state, DAD_H, 0x00, 0x00); putHL16(state, 0x1); // Setup the command
+	cpuTick(state); // Execute command
+	success = getHL(state) == 0x2 && state->f.c == 0;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test DAD_H\t(%02X)\t\t: [%s]\n", DAD_H, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, LHLD, 0xFF, 0x00); // Setup the command
+	cpuTick(state); // Execute command
+	success = getHL(state) == 0xFFEE;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test LHLD\t(%02X)\t\t: [%s]\n", LHLD, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, DCX_H, 0x00, 0x00); putHL16(state, 0x1); // Setup the command
+	cpuTick(state); // Execute command
+	success = getHL(state) == 0x00;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test DCX_H\t(%02X)\t\t: [%s]\n", DCX_H, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, INR_L, 0x00, 0x00); state->l = 0x1; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->l == 0x02;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test INR_L\t(%02X)\t\t: [%s]\n", INR_L, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, DCR_L, 0x00, 0x00); state->l = 0x2; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->l == 0x01;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test DCR_L\t(%02X)\t\t: [%s]\n", DCR_L, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, MVI_L, 0x42, 0x00); // Setup the command
+	cpuTick(state); // Execute command
+	success = state->l == 0x42;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test MVI_L\t(%02X)\t\t: [%s]\n", MVI_L, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, CMA, 0x00, 0x00); state->a = 0xFF; // Setup the command
+	cpuTick(state); // Execute command
+	success = state->a == 0x00;
+	if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMA\t(%02X)\t\t: [%s]\n", CMA, success ? "OK" : "FAIL"); // Print the result of the test
 
 	// Output statistics
 	float elapsedTimeMs = sfTime_asMilliseconds(sfClock_getElapsedTime(timer));
