@@ -84,6 +84,30 @@ uint16_t popStack(i8080State* state) {
 	return stckVal;
 }
 
+uint8_t port_in(i8080State* state, uint8_t port) {
+	uint8_t operation = state->c;
+
+	log_info("[%04X] IN(%02X) operation==%i", state->pc, IN, operation);
+
+	// print a character stored in E
+	if (operation == 2) {
+		log_info("%c", state->e);
+	}
+	// print from memory at (DE) until '$' char
+	else if (operation == 9) {
+		uint16_t addr = (state->d << 8) | state->e;
+		do {
+			log_info("%c", readMemory(state, addr++));
+		} while (readMemory(state, addr) != '$');
+	}
+
+	return 0xFF;
+}
+
+void port_out(i8080State* state, uint8_t port, uint8_t value) {
+	// do nothing
+}
+
 void executeRET(i8080State* state) {
 	uint16_t stckVal = popStack(state);
 	//uint8_t returningOpcode = readMemory(state, stckVal);
@@ -95,6 +119,8 @@ void executeRET(i8080State* state) {
 
 	setPC(state, stckVal + pcInc);
 
+	if (state->f.isi)
+		log_trace("--- END INTERRUPT ---");
 	state->f.isi = 0; // clear isInterrupted bit
 }
 
@@ -107,6 +133,7 @@ void executeCALL(i8080State* state, uint16_t address) {
 
 void executeInterrupt(i8080State* state, uint16_t address) {
 	if (!state->f.isi && state->f.ien) {
+		log_trace("--- INTERRUPT %i ---", address);
 		state->f.isi = 1; // set isInterrupted bit
 		pushStack(state, state->pc);
 		setPC(state, address); // Set the pc to address
@@ -1053,8 +1080,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case CALL:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CALL(%02X) %04X (%02X %02X)", state->pc, CALL, store16_1, byte1, byte2);
-		pushStack(state, state->pc);
-		setPC(state, store16_1); // Set the pc to address
+		executeCALL(state, store16_1);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case ACI: // Adds D8 to A
@@ -1089,6 +1115,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case OUT:
 		log_trace("[%04X] OUT(%02X): %c", state->pc, OUT, byte1);
+		port_out(state, byte1, state->a);
 		break;
 	case CNC:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
@@ -1130,7 +1157,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		}
 		break;
 	case IN: // TODO
-		log_warn("[%04X] IN(%02X)", state->pc, IN);
+		state->a = port_in(state, byte1);
 		break;
 	case CC:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address

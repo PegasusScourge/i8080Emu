@@ -129,6 +129,17 @@ int main(int argc, char** argv) {
 					return -1;
 				}
 			}
+			else if (strcmp("--loglevel", argv[i]) == 0) {
+				if ((i + 1) < argc) {
+					uint16_t val = atoi(argv[i + 1]);
+					if(val >= 0 && val < 6)
+						log_set_level(val);
+				}
+				else {
+					log_fatal("Invalid switch '%s': requires one argument!", argv[i]);
+					return -1;
+				}
+			}
 			else if (strcmp("--test", argv[i]) == 0) {
 				utilTest();
 				return 0;
@@ -168,6 +179,19 @@ int main(int argc, char** argv) {
 	initGraphics(state.vid.width, state.vid.height);
 	log_info("-- Graphics init complete ---");
 
+	log_info("Injecting...");
+	// Inject code to perform the text output functions
+	// inject "out 1,a" at 0x0000 (signal to stop the test)
+	//memory[0x0000] = 0xD3;
+	//memory[0x0001] = 0x00;
+
+	// inject "in a,0" at 0x0005 (signal to output some characters)
+	writeMemory(&state, 0x05, 0xDB); //memory[0x0005] = 0xDB;
+	writeMemory(&state, 0x06, 0x00); //memory[0x0006] = 0x00;
+	writeMemory(&state, 0x07, 0xC9); //memory[0x0007] = 0xC9;
+
+	state.pc = 0x100;
+
 	// Create the timer
 	sfClock* timer = sfClock_create();
 	sfTime time;
@@ -177,6 +201,8 @@ int main(int argc, char** argv) {
 	float elapsedTime = 0;
 	float cycle_accumulator = 0;
 	float frame_accumulator = 0;
+	float frame_interrupFreq = 1000.0f;
+	bool frameInterruptFlag = false;
 
 	// Do emulation
 	while (state.valid) {
@@ -191,7 +217,7 @@ int main(int argc, char** argv) {
 		sfClock_restart(timer);
 		elapsedTime = (float)sfTime_asMicroseconds(time) / 1000.0f;
 		cycle_accumulator += elapsedTime;
-		frame_accumulator += elapsedTime;
+		//frame_accumulator += elapsedTime;
 
 		float accumCyclePrev = cycle_accumulator;
 
@@ -206,11 +232,17 @@ int main(int argc, char** argv) {
 		}
 
 		float accumFramePrev = frame_accumulator;
-		if (frame_accumulator >= 16.7f) {
+		if (frame_accumulator >= frame_interrupFreq) {
 			// Trigger CPU interrupt
-			log_trace("-- VBlank begin interrupt");
-			executeInterrupt(&state, INTERRUPT_1);
-			frame_accumulator -= 16.7f;
+			//log_trace("-- VBlank interrupt");
+			if (frameInterruptFlag) {
+				executeInterrupt(&state, INTERRUPT_1);
+			}
+			else {
+				executeInterrupt(&state, INTERRUPT_2);
+			}
+			frameInterruptFlag = !frameInterruptFlag;
+			frame_accumulator -= frame_interrupFreq;
 		}
 
 		// Update the video buffer
@@ -297,6 +329,13 @@ void renderStateInfo(i8080State* state, float accum, float accum2, float frameTi
 	sfText_setString(renderText, "psw:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	sfText_setString(renderText, decimal_to_binary(getPSW(state))); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 	sfText_setString(renderText, "[accumu]SZ0A0P1C"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	pos.y += incY;
+	sfText_setString(renderText, "I_Enable:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->f.ien, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "Interrupted:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(state->f.isi, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	pos.y += incY;
 	sfText_setString(renderText, "Wait cycles:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
