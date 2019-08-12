@@ -94,6 +94,11 @@ void executeRET(i8080State* state) {
 	setPC(state, stckVal + pcInc);
 }
 
+void executeCALL(i8080State* state, uint16_t address) {
+	pushStack(state, state->pc);
+	setPC(state, address); // Set the pc to address
+}
+
 bool executeOpcode(i8080State* state, uint8_t opcode) {
 	bool success = true;
 	bool pcShouldIncrement = true;
@@ -869,10 +874,10 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CNZ(%02X) %04X (%02X %02X) : %i", state->pc, CNZ, store16_1, byte1, byte2, !state->f.z);
 		if (!state->f.z) {
-			pushStack(state, state->pc);
-			setPC(state, store16_1); // Set the pc to address
+			executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
+		success = !state->f.z;
 		break;
 	case PUSH_B:
 		log_trace("[%04X] PUSH_B(%02X) %04X", state->pc, PUSH_B, getBC(state));
@@ -885,8 +890,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_0: // Call $0x0
 		log_trace("[%04X] RST_0(%02X)", state->pc, RST_0);
-		pushStack(state, state->pc);
-		setPC(state, 0x00); // Set the pc to address
+		executeCALL(state, 0x00);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RZ:
@@ -910,7 +914,15 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
-
+	case CZ:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CNZ(%02X) %04X (%02X %02X) : %i", state->pc, CNZ, store16_1, byte1, byte2, state->f.z);
+		if (state->f.z) {
+			executeCALL(state, store16_1);
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		success = state->f.z;
+		break;
 	case CALL:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CALL(%02X) %04X (%02X %02X)", state->pc, CALL, store16_1, byte1, byte2);
@@ -918,6 +930,71 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		setPC(state, store16_1); // Set the pc to address
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
+	case ACI: // Adds D8 to A
+		log_trace("[%04X] ACI(%02X) %02X", state->pc, ACI, byte1);
+		state->a = addCarry(state, addCarry(state, state->a, byte1), state->f.c);
+		setZSPAC(state, state->a);
+		break;
+	case RST_1:
+		log_trace("[%04X] RST_1(%02X)", state->pc, RST_1);
+		executeCALL(state, 0x08);
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
+	case RNC:
+		log_trace("[%04X] RNC(%02X)", state->pc, RNC);
+		if (!state->f.c) {
+			pcShouldIncrement = false;
+			executeRET(state);
+		}
+		success = !state->f.c;
+		break;
+	case POP_D:
+		log_trace("[%04X] POP_D(%02X)", state->pc, POP_D);
+		putDE16(state, popStack(state));
+		break;
+	case JNC:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
+		log_trace("[%04X] JNZ(%02X) %04X (%02X %02X) : %i", state->pc, JNZ, store16_1, byte1, byte2, !state->f.c);
+		if (!state->f.c) {
+			setPC(state, store16_1); // Set the pc to jmpPos
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		break;
+	case OUT:
+		log_trace("[%04X] OUT(%02X): %c", state->pc, OUT, byte1);
+		break;
+	case CNC:
+		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
+		log_trace("[%04X] CNC(%02X) %04X (%02X %02X) : %i", state->pc, CNC, store16_1, byte1, byte2, !state->f.z);
+		if (!state->f.c) {
+			executeCALL(state, store16_1);
+			pcShouldIncrement = false; // Stop the auto increment
+		}
+		success = !state->f.c;
+		break;
+	case PUSH_D:
+		log_trace("[%04X] PUSH_D(%02X) %04X", state->pc, PUSH_D, getDE(state));
+		pushStack(state, getDE(state));
+		break;
+	case SUI: // takes D8 from A
+		log_trace("[%04X] SUI(%02X) %02X", state->pc, SUI, byte1);
+		state->a = subCarry(state, state->a, byte1);
+		setZSPAC(state, state->a);
+		break;
+	case RST_2:
+		log_trace("[%04X] RST_2(%02X)", state->pc, RST_2);
+		executeCALL(state, 0x10);
+		pcShouldIncrement = false; // Stop the auto increment
+		break;
+	case RC:
+		log_trace("[%04X] RC(%02X)", state->pc, RC);
+		if (state->f.c) {
+			pcShouldIncrement = false;
+			executeRET(state);
+		}
+		success = state->f.c;
+		break;
+
 	default:
 		unimplementedOpcode(opcode);
 		break;
