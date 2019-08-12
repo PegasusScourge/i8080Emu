@@ -28,6 +28,16 @@ Utility functions and types
 #define ERRBIT_MEM_OUT_OF_BOUNDS_UNDERFLW		0b10000000
 #define ERRBIT_MEM_OUT_OF_BOUNDS_OVERFLW		0b01000000
 
+// Interrupt defs
+#define INTERRUPT_0 0x0000
+#define INTERRUPT_1 0x0008
+#define INTERRUPT_2 0x0010
+#define INTERRUPT_3 0x0018
+#define INTERRUPT_4 0x0020
+#define INTERRUPT_5 0x0028
+#define INTERRUPT_6 0x0030
+#define INTERRUPT_7 0x0038
+
 // typedefs
 #define UINT8_MAX 0xFF
 typedef unsigned char uint8_t;
@@ -48,6 +58,8 @@ typedef struct flagRegister {
 	unsigned int c : 1; // carry flag
 	unsigned int zero : 1; // always zero, bits 3 and 5
 	unsigned int one : 1; // always one, bit 1
+	unsigned int ien : 1; // Is the interrupt system enabled?
+	unsigned int isi : 1; // Are we currently interrupted?
 } flagRegister;
 typedef struct videoMemoryInfo {
 	uint16_t startAddress;

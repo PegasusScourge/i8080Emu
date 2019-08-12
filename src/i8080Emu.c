@@ -27,7 +27,7 @@ void closeGraphics();
 // Handle the events
 void handleEvent(const sfEvent* evt, i8080State* state);
 // Render the state info for the window
-void renderStateInfo(i8080State* state, float accum, float frameTimeMillis);
+void renderStateInfo(i8080State* state, float accum, float accum2, float frameTimeMillis);
 // Update the video buffer
 void updateVideoBuffer(i8080State* state, sfImage* img);
 
@@ -50,6 +50,9 @@ int main(int argc, char** argv) {
 	}
 	// Pass the log file
 	log_set_fp(logFile);
+
+	// Set log level
+	log_set_level(LOG_INFO);
 
 	// Init the 8080
 	i8080State state;
@@ -172,7 +175,8 @@ int main(int argc, char** argv) {
 	// Timing variables
 	float cycleTime = 0; // time a single clock pulse takes in milliseconds
 	float elapsedTime = 0;
-	float accumulator = 0;
+	float cycle_accumulator = 0;
+	float frame_accumulator = 0;
 
 	// Do emulation
 	while (state.valid) {
@@ -186,12 +190,27 @@ int main(int argc, char** argv) {
 		time = sfClock_getElapsedTime(timer);
 		sfClock_restart(timer);
 		elapsedTime = (float)sfTime_asMicroseconds(time) / 1000.0f;
-		accumulator += elapsedTime;
-		float accumPrev = accumulator;
+		cycle_accumulator += elapsedTime;
+		frame_accumulator += elapsedTime;
 
-		if (accumulator >= cycleTime) {
-			cpuTick(&state);
-			accumulator -= cycleTime;
+		float accumCyclePrev = cycle_accumulator;
+
+		while (true) {
+			if (cycle_accumulator >= cycleTime) {
+				cpuTick(&state);
+				cycle_accumulator -= cycleTime;
+			}
+			else {
+				break;
+			}
+		}
+
+		float accumFramePrev = frame_accumulator;
+		if (frame_accumulator >= 16.7f) {
+			// Trigger CPU interrupt
+			log_trace("-- VBlank begin interrupt");
+			executeInterrupt(&state, INTERRUPT_1);
+			frame_accumulator -= 16.7f;
 		}
 
 		// Update the video buffer
@@ -205,7 +224,7 @@ int main(int argc, char** argv) {
 		sfRenderWindow_drawSprite(window, videoSprite, NULL);
 		sfTexture_destroy(videoTexture);
 
-		renderStateInfo(&state, accumPrev, elapsedTime);
+		renderStateInfo(&state, accumCyclePrev, accumFramePrev, elapsedTime);
 
 		// Display the window
 		sfRenderWindow_display(window);
@@ -226,7 +245,7 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
-void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
+void renderStateInfo(i8080State* state, float accum, float accum2, float frameTimeMillis) {
 	sfText* renderText = sfText_create();
 	if (renderText == NULL) {
 		log_warn("Rendering text object failed to create");
@@ -283,8 +302,11 @@ void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
 	sfText_setString(renderText, "Wait cycles:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	_itoa(state->waitCycles, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Time accumulator (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	sfText_setString(renderText, "Cycle accumulator (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	_gcvt(accum, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "Frame accumulator (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_gcvt(accum2, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	sfText_setString(renderText, "Frame Time (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	_gcvt(frameTimeMillis, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;

@@ -86,17 +86,31 @@ uint16_t popStack(i8080State* state) {
 
 void executeRET(i8080State* state) {
 	uint16_t stckVal = popStack(state);
-	uint8_t returningOpcode = readMemory(state, stckVal);
-	uint16_t pcInc = getInstructionLength(returningOpcode);
+	//uint8_t returningOpcode = readMemory(state, stckVal);
+	uint8_t returningOpcode = 0;
+	//uint16_t pcInc = getInstructionLength(returningOpcode);
+	uint16_t pcInc = 0;
 
 	log_debug("executeRET; stckVal: %04X, retOpcode: %02X, pcInc: %04X", stckVal, returningOpcode, pcInc);
 
 	setPC(state, stckVal + pcInc);
+
+	state->f.isi = 0; // clear isInterrupted bit
 }
 
 void executeCALL(i8080State* state, uint16_t address) {
-	pushStack(state, state->pc);
+	uint8_t returningOpcode = readMemory(state, state->pc);
+	uint16_t pcInc = getInstructionLength(returningOpcode);
+	pushStack(state, state->pc + pcInc);
 	setPC(state, address); // Set the pc to address
+}
+
+void executeInterrupt(i8080State* state, uint16_t address) {
+	if (!state->f.isi && state->f.ien) {
+		state->f.isi = 1; // set isInterrupted bit
+		pushStack(state, state->pc);
+		setPC(state, address); // Set the pc to address
+	}
 }
 
 bool executeOpcode(i8080State* state, uint8_t opcode) {
@@ -797,13 +811,126 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->a = subCarry(state, subCarry(state, state->a, state->a), state->f.c);
 		setZSPAC(state, state->a);
 		break;
-
-		// ANDs go here (0xA0)
-
-		// XORs go here (0xA8)
-
-		// ORs go here (0xB0)
-
+	case ANA_B:
+		log_trace("[%04X] ANA_B(%02X)", state->pc, ANA_B);
+		state->a = state->a & state->b;
+		setZSPAC(state, state->a);
+		break;
+	case ANA_C:
+		log_trace("[%04X] ANA_C(%02X)", state->pc, ANA_C);
+		state->a = state->a & state->c;
+		setZSPAC(state, state->a);
+		break;
+	case ANA_D:
+		log_trace("[%04X] ANA_D(%02X)", state->pc, ANA_D);
+		state->a = state->a & state->d;
+		setZSPAC(state, state->a);
+		break;
+	case ANA_E:
+		log_trace("[%04X] ANA_E(%02X)", state->pc, ANA_E);
+		state->a = state->a & state->e;
+		setZSPAC(state, state->a);
+		break;
+	case ANA_H:
+		log_trace("[%04X] ANA_H(%02X)", state->pc, ANA_H);
+		state->a = state->a & state->h;
+		setZSPAC(state, state->a);
+		break;
+	case ANA_L:
+		log_trace("[%04X] ANA_L(%02X)", state->pc, ANA_L);
+		state->a = state->a & state->l;
+		setZSPAC(state, state->a);
+		break;
+	case ANA_M:
+		log_trace("[%04X] ANA_L(%02X)", state->pc, ANA_M);
+		state->a = state->a & readMemory(state, getHL(state));
+		setZSPAC(state, state->a);
+		break;
+	case ANA_A:
+		log_trace("[%04X] ANA_A(%02X)", state->pc, ANA_A);
+		state->a = state->a & state->a;
+		setZSPAC(state, state->a);
+		break;
+	case XRA_B:
+		log_trace("[%04X] XRA_B(%02X)", state->pc, XRA_B);
+		state->a = state->a ^ state->b;
+		setZSPAC(state, state->a);
+		break;
+	case XRA_C:
+		log_trace("[%04X] XRA_C(%02X)", state->pc, XRA_C);
+		state->a = state->a ^ state->c;
+		setZSPAC(state, state->a);
+		break;
+	case XRA_D:
+		log_trace("[%04X] XRA_D(%02X)", state->pc, XRA_D);
+		state->a = state->a ^ state->d;
+		setZSPAC(state, state->a);
+		break;
+	case XRA_E:
+		log_trace("[%04X] XRA_E(%02X)", state->pc, XRA_E);
+		state->a = state->a ^ state->e;
+		setZSPAC(state, state->a);
+		break;
+	case XRA_H:
+		log_trace("[%04X] XRA_H(%02X)", state->pc, XRA_H);
+		state->a = state->a ^ state->h;
+		setZSPAC(state, state->a);
+		break;
+	case XRA_L:
+		log_trace("[%04X] XRA_L(%02X)", state->pc, XRA_L);
+		state->a = state->a ^ state->l;
+		setZSPAC(state, state->a);
+		break;
+	case XRA_M:
+		log_trace("[%04X] XRA_M(%02X)", state->pc, XRA_M);
+		state->a = state->a ^ readMemory(state, getHL(state));
+		setZSPAC(state, state->a);
+		break;
+	case XRA_A:
+		log_trace("[%04X] XRA_A(%02X)", state->pc, XRA_A);
+		state->a = state->a ^ state->a;
+		setZSPAC(state, state->a);
+		break;
+	case ORA_B:
+		log_trace("[%04X] ORA_B(%02X)", state->pc, ORA_B);
+		state->a = state->a | state->b;
+		setZSPAC(state, state->a);
+		break;
+	case ORA_C:
+		log_trace("[%04X] ORA_C(%02X)", state->pc, ORA_C);
+		state->a = state->a | state->c;
+		setZSPAC(state, state->a);
+		break;
+	case ORA_D:
+		log_trace("[%04X] ORA_D(%02X)", state->pc, ORA_D);
+		state->a = state->a | state->d;
+		setZSPAC(state, state->a);
+		break;
+	case ORA_E:
+		log_trace("[%04X] ORA_E(%02X)", state->pc, ORA_E);
+		state->a = state->a | state->e;
+		setZSPAC(state, state->a);
+		break;
+	case ORA_H:
+		log_trace("[%04X] ORA_H(%02X)", state->pc, ORA_H);
+		state->a = state->a | state->h;
+		setZSPAC(state, state->a);
+		break;
+	case ORA_L:
+		log_trace("[%04X] ORA_L(%02X)", state->pc, ORA_L);
+		state->a = state->a | state->l;
+		setZSPAC(state, state->a);
+		break;
+	case ORA_M:
+		log_trace("[%04X] ORA_M(%02X)", state->pc, ORA_M);
+		state->a = state->a | readMemory(state, getHL(state));
+		setZSPAC(state, state->a);
+		break;
+	case ORA_A:
+		log_trace("[%04X] ORA_A(%02X)", state->pc, ORA_A);
+		state->a = state->a | state->a;
+		setZSPAC(state, state->a);
+		break;
 	case CMP_B: // takes B from A
 		log_trace("[%04X] CMP_B(%02X)", state->pc, CMP_B);
 		store8_1 = subCarry(state, state->a, state->b);

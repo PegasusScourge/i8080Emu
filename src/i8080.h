@@ -43,5 +43,8 @@ uint16_t peakStack(i8080State* state);
 // Causes the processor to RETURN. DO NOT increment PC before/after calling
 void executeRET(i8080State* state);
 
-// Causes the processor to execute a call. DO NOT increment PC before/after calling
+// Causes the processor to execute a call. DO NOT increment PC before/after calling. Increments the value push to the stack to go for the next instruction
 void executeCALL(i8080State* state, uint16_t address);
+
+// Causes the processor to execute a call, but does not increment the value pushed to the stack making sure no instructions are lost
+void executeInterrupt(i8080State* state, uint16_t address);

@@ -112,6 +112,8 @@ void reset8080(i8080State* state) {
 	state->f.s = 0;
 	state->f.z = 0;
 	state->f.zero = 0;
+	state->f.ien = 1; // Interrupts are enabled by default
+	state->f.isi = 0;
 
 	// Set the video memory flags
 	state->vid.startAddress = 0;
@@ -190,6 +192,7 @@ bool isNegative(int16_t n) {
 }
 
 bool shouldACFlag(uint8_t n) {
+	// Other possible implementation: ((c->a | val) & 0x08) != 0;
 	return (n & 0xF) == 0;
 }
 
