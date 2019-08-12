@@ -296,7 +296,7 @@ void renderStateInfo(i8080State* state, float accum, float frameTimeMillis) {
 			}
 
 			_itoa(i+2, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
-			_itoa(readMemory(state, i+2) + (readMemory(state, i+1) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
+			_itoa(readMemory(state, i+1) + (readMemory(state, i+2) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
 		}
 		pos.y += incY;
 	}
