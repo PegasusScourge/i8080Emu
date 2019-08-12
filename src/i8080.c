@@ -298,12 +298,74 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] CMA(%02X) %02X", state->pc, CMA, state->a);
 		state->a = ~state->a;
 		break;
-
 	case LXI_SP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // D16
 		log_trace("[%04X] LXI_SP(%02X) %04X (%02X %02X)", state->pc, LXI_SP, store16_1, byte1, byte2);
 		setSP(state, store16_1); // Set the sp to D16
 		break;
+	case STA: // write value of A to memory[store16_1]
+		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
+		log_trace("[%04X] STA(%02X) %04X A:%02X", state->pc, STA, store16_1, state->a);
+		writeMemory(state, store16_1, state->a);
+		break;
+	case INX_SP:
+		log_trace("[%04X] INX_SP(%02X) %04X", state->pc, INX_SP, state->sp);
+		setSP(state, state->sp + 1);
+		break;
+	case INR_M:
+		store8_1 = readMemory(state, getHL(state));
+		log_trace("[%04X] INR_M(%02X) [%04X]%02X", state->pc, INR_M, getHL(state), store8_1);
+		store8_1 += 1;
+		setZSPAC(state, store8_1);
+		writeMemory(state, getHL(state), store8_1);
+		break;
+	case DCR_M:
+		store8_1 = readMemory(state, getHL(state));
+		log_trace("[%04X] DCR_M(%02X) [%04X]%02X", state->pc, DCR_M, getHL(state), store8_1);
+		store8_1 -= 1;
+		setZSPAC(state, store8_1);
+		writeMemory(state, getHL(state), store8_1);
+		break;
+	case MVI_M: // Put byte1 into memory[HL]
+		log_trace("[%04X] MVI_M(%02X) %02X --> [%04X]", state->pc, MVI_M, byte1, getHL(state));
+		writeMemory(state, getHL(state), byte1);
+		break;
+	case STC:
+		log_trace("[%04X] STC(%02X) 1", state->pc, STC);
+		state->f.c = 1;
+		break;
+	case DAD_SP: // HL += SP
+		log_trace("[%04X] DAD_SP(%02X) %04X", state->pc, DAD_SP, state->sp);
+		putHL16(state, addCarry16(state, getHL(state), state->sp));
+		break;
+	case LDA: // load value of A from memory[store16_1]
+		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
+		log_trace("[%04X] LDA(%02X) %04X", state->pc, LDA, store16_1);
+		state->a = readMemory(state, store16_1);
+		break;
+	case DCX_SP:
+		log_trace("[%04X] DCX_SP(%02X) %04X", state->pc, DCX_SP, state->sp);
+		setSP(state, state->sp - 1);
+		break;
+	case INR_A:
+		log_trace("[%04X] INR_A(%02X) %02X", state->pc, INR_A, state->a);
+		state->a = state->a + 1;
+		setZSPAC(state, state->a);
+		break;
+	case DCR_A:
+		log_trace("[%04X] DCR_A(%02X) %02X", state->pc, DCR_A, state->a);
+		state->a = state->a - 1;
+		setZSPAC(state, state->a);
+		break;
+	case MVI_A: // Put byte1 into A
+		log_trace("[%04X] MVI_A(%02X) %02X", state->pc, MVI_A, byte1);
+		state->a = byte1;
+		break;
+	case CMC:
+		log_trace("[%04X] CMC(%02X)", state->pc, CMC);
+		state->f.c = ~state->f.c;
+		break;
+
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JMP(%02X) %04X (%02X %02X)", state->pc, JMP, store16_1, byte1, byte2);
