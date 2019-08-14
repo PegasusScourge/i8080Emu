@@ -95,6 +95,7 @@ int main(int argc, char** argv) {
 	bool frameInterruptFlag = false;
 
 	log_info("Initial pc: %04X", state.pc);
+	state.mode = MODE_PAUSED;
 
 	// Do emulation
 	while (!shouldClose) {
@@ -317,8 +318,8 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 				sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
 			}
 
-			_itoa(i+2, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
-			_itoa(i8080op_readMemory(state, i+1) + (i8080op_readMemory(state, i+2) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
+			_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
+			_itoa(i8080op_readMemory(state, i) + (i8080op_readMemory(state, i+1) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
 		}
 		pos.y += incY;
 	}

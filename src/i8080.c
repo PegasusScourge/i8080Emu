@@ -95,6 +95,8 @@ void i8080_panic(i8080State* state) {
 }
 
 uint8_t i8080op_readMemory(i8080State* state, uint16_t index) {
+	//breakpoint(state); // pause here to inspect state
+
 	// The bounds checking function raises any necessary flags in case of error
 	if (i8080_boundsCheckMemIndex(state, index)) {
 		while (index > 0x3fff)
@@ -106,6 +108,8 @@ uint8_t i8080op_readMemory(i8080State* state, uint16_t index) {
 }
 
 void i8080op_writeMemory(i8080State* state, uint16_t index, uint8_t val) {
+	//breakpoint(state); // pause here to inspect state
+
 	// The bounds checking function raises any necessary flags in case of error
 	if (i8080_boundsCheckMemIndex(state, index)) {
 		while (index > 0x3fff)
@@ -118,6 +122,8 @@ void i8080op_writeMemory(i8080State* state, uint16_t index, uint8_t val) {
 }
 
 void i8080op_setPC(i8080State* state, uint16_t v) {
+	//breakpoint(state); // pause here to inspect state
+
 	if (i8080_boundsCheckMemIndex(state, v)) {
 		state->pc = v;
 	}
@@ -136,13 +142,13 @@ void i8080op_setSP(i8080State* state, uint16_t v) {
 }
 
 void i8080op_pushStack(i8080State* state, uint16_t v) {
-	i8080op_writeMemory(state, state->sp, (v & 0xFF00) >> 8);
-	i8080op_writeMemory(state, state->sp - 1, v & 0x00FF);
+	i8080op_writeMemory(state, state->sp - 1, (v & 0xFF00) >> 8);
+	i8080op_writeMemory(state, state->sp - 2, v & 0x00FF);
 	i8080op_setSP(state, state->sp - 2);
 }
 
 uint16_t i8080op_peakStack(i8080State* state) {
-	return ((uint8_t)i8080op_readMemory(state, state->sp + 2) << 8) + i8080op_readMemory(state, state->sp + 1);
+	return ((uint8_t)i8080op_readMemory(state, state->sp + 1) << 8) + i8080op_readMemory(state, state->sp);
 }
 
 uint16_t i8080op_popStack(i8080State* state) {
@@ -171,6 +177,8 @@ void port_out(i8080State* state, uint8_t port, uint8_t value) {
 }
 
 void i8080op_executeRET(i8080State* state) {
+	//breakpoint(state); // pause here to inspect state
+
 	uint16_t stckVal = i8080op_popStack(state);
 	//uint8_t returningOpcode = i8080op_readMemory(state, stckVal);
 	uint8_t returningOpcode = 0;
@@ -187,6 +195,8 @@ void i8080op_executeRET(i8080State* state) {
 }
 
 void i8080op_executeCALL(i8080State* state, uint16_t address) {
+	//breakpoint(state); // pause here to inspect state
+
 	uint8_t returningOpcode = i8080op_readMemory(state, state->pc);
 	uint16_t pcInc = i8080_getInstructionLength(returningOpcode);
 	i8080op_pushStack(state, state->pc + pcInc);
@@ -194,6 +204,8 @@ void i8080op_executeCALL(i8080State* state, uint16_t address) {
 }
 
 void i8080op_executeInterrupt(i8080State* state, uint16_t address) {
+	//breakpoint(state); // pause here to inspect state
+
 	if (state->f.isi == 0 && state->f.ien) {
 		log_trace("--- INTERRUPT %i ---", address);
 		state->f.isi = address; // set isInterrupted bit

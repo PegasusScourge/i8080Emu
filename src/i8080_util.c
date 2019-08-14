@@ -319,6 +319,13 @@ void loadFile(const char* file, unsigned char* buffer, int bufferSize, int offse
 	fclose(f);
 }
 
+void breakpoint(i8080State* state) {
+	if (state->mode == MODE_HLT)
+		return;
+	state->mode = MODE_PAUSED;
+	log_warn("BREAKPOINT TRIGGERED");
+}
+
 void i8080_stateCheck(i8080State* state) {
 	if (state == NULL) {
 		log_fatal("NULL state");
@@ -327,7 +334,7 @@ void i8080_stateCheck(i8080State* state) {
 }
 
 void init8080(i8080State* state) {
-	state->mode = MODE_PAUSED; // set valid
+	state->mode = MODE_HLT; // set valid
 
 	// Init the memory
 	state->memory = malloc(i8080_MEMORY_SIZE * sizeof(uint8_t));

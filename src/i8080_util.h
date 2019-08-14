@@ -406,3 +406,6 @@ char* i8080_decToBin(uint16_t n);
 
 // Fills the buffer with the mneumonic for the opcode
 const char* i8080_decompile(uint8_t opcode);
+
+// Triggers a breakpoint condition
+void breakpoint(i8080State* state);
