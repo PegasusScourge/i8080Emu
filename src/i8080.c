@@ -57,6 +57,10 @@ void i8080_panic(i8080State* state) {
 	log_fatal("i8080 PANIC has occured, cycle %ul", state->cyclesExecuted);
 	state->mode = MODE_HLT; // set invalid
 
+	i8080_dump(state);
+}
+
+void i8080_dump(i8080State* state) {
 	// Dump the state
 	FILE* dumpFile = fopen("i8080_dump.txt", "w");
 	if (dumpFile == NULL) {

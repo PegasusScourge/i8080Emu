@@ -22,6 +22,9 @@ void unimplementedOpcode(i8080State* state, uint8_t opcode);
 // Causes the processor to panic and halt execution immediately
 void i8080_panic(i8080State* state);
 
+// Dump the current state for debugging purposes
+void i8080_dump(i8080State* state);
+
 // Read the memory at index
 uint8_t i8080op_readMemory(i8080State* state, uint16_t index);
 

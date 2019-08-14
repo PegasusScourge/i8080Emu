@@ -43,6 +43,7 @@ sfSprite* videoSprite = NULL;
 sfImage* videoImg = NULL;
 
 bool shouldClose = false;
+bool showStats = false;
 
 #define TEXT_SIZE 14
 
@@ -198,171 +199,173 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 
 	pos.x = 16;
 	pos.y = 550;
-	sfText_setString(renderText, "[ESC] --> exit, [BACKSPACE] --> HLT, [P] --> pause, [O] --> normal, [S] --> step"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+	sfText_setString(renderText, "[ESC] exit, [BACKSPACE] HLT, [P] pause, [O] normal, [S] step, [F1] debug dump, [F2] show stats, [SHIFT+F2] hide stats"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 	sfText_setString(renderText, "Current mode:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	sfText_setString(renderText, getModeStr(state->mode)); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 
-	#define X_INIT_POS 16
-	pos.x = X_INIT_POS;
-	pos.y = TEXT_SIZE + 4;
-	char buf[80];
+	if(showStats) {
+		#define X_INIT_POS 16
+		pos.x = X_INIT_POS;
+		pos.y = TEXT_SIZE + 4;
+		char buf[80];
 
-	sfText_setString(renderText, "Registers:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+		sfText_setString(renderText, "Registers:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 
-	sfText_setString(renderText, "a:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->a, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "a:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->a, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "b:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->b, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "b:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->b, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "c:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->c, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "c:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->c, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "d:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->d, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "d:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->d, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "e:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->e, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "e:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->e, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "h:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->h, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "h:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->h, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "l:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->l, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "l:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->l, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "pc:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->pc, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "pc:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->pc, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "sp:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->sp, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "sp:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->sp, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "psw:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	sfText_setString(renderText, i8080_decToBin(i8080op_getPSW(state))); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
-	sfText_setString(renderText, "[accumu]SZ0A0P1C"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "psw:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		sfText_setString(renderText, i8080_decToBin(i8080op_getPSW(state))); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+		sfText_setString(renderText, "[accumu]SZ0A0P1C"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	pos.y += incY;
-	sfText_setString(renderText, "I_Enable:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->f.ien, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		pos.y += incY;
+		sfText_setString(renderText, "I_Enable:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->f.ien, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Interrupted:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->f.isi, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "Interrupted:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->f.isi, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	pos.y += incY;
-	sfText_setString(renderText, "Wait cycles:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->waitCycles, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		pos.y += incY;
+		sfText_setString(renderText, "Wait cycles:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->waitCycles, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Frame Time (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_gcvt(frameTimeMillis, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "Frame Time (ms):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_gcvt(frameTimeMillis, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Clock frequency (MHz):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_gcvt(state->clockFreqMHz, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "Clock frequency (MHz):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_gcvt(state->clockFreqMHz, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	pos.y += incY;
-	uint8_t opcode = i8080op_readMemory(state, state->pc);
-	sfText_setString(renderText, "Instruction:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(opcode, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		pos.y += incY;
+		uint8_t opcode = i8080op_readMemory(state, state->pc);
+		sfText_setString(renderText, "Instruction:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(opcode, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Status string:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	sfText_setString(renderText, i8080_decompile(opcode)); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "Status string:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		sfText_setString(renderText, i8080_decompile(opcode)); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Byte1:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(i8080op_readMemory(state, state->pc + 1), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "Byte1:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(i8080op_readMemory(state, state->pc + 1), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Byte2:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(i8080op_readMemory(state, state->pc + 2), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "Byte2:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(i8080op_readMemory(state, state->pc + 2), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Instr len:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(i8080_getInstructionLength(i8080op_readMemory(state, state->pc)), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "Instr len:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(i8080_getInstructionLength(i8080op_readMemory(state, state->pc)), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	pos.y += incY;
-	sfText_setString(renderText, "Video Memory Loc:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->vid.startAddress, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		pos.y += incY;
+		sfText_setString(renderText, "Video Memory Loc:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->vid.startAddress, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Video Memory Dims:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(state->vid.width, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 4;
-	_itoa(state->vid.height, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		sfText_setString(renderText, "Video Memory Dims:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->vid.width, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 4;
+		_itoa(state->vid.height, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	#define X_POS_MEM_COL 400
-	pos.x = X_POS_MEM_COL;
-	pos.y = TEXT_SIZE + 4;
+		#define X_POS_MEM_COL 400
+		pos.x = X_POS_MEM_COL;
+		pos.y = TEXT_SIZE + 4;
 
-	sfText_setString(renderText, "Memory snippet:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
-	// Display the memory content surrounding our current pc
-	for (int i = state->pc - 10; i < state->pc + 10; i++) {
-		if (i8080_boundsCheckMemIndex(state, i)) {
-			if (i == state->pc) {
-				sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the current PC in red
+		sfText_setString(renderText, "Memory snippet:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+		// Display the memory content surrounding our current pc
+		for (int i = state->pc - 10; i < state->pc + 10; i++) {
+			if (i8080_boundsCheckMemIndex(state, i)) {
+				if (i == state->pc) {
+					sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the current PC in red
+				}
+				else {
+					sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+				}
+
+				_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
+				_itoa(i8080op_readMemory(state, i), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_MEM_COL;
+			}
+			pos.y += incY;
+		}
+
+		#define X_POS_STACK_COL 550
+		pos.x = X_POS_STACK_COL;
+		pos.y = TEXT_SIZE + 4;
+
+		sfText_setString(renderText, "Stack:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+		// Display the stack
+		for (int i = state->sp - 2; i < state->sp + 20; i += 2) {
+			if (i8080_boundsCheckMemIndex(state, i)) {
+				if (i == state->sp) {
+					sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the top of the stack in red
+				}
+				else {
+					sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+				}
+
+				_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
+				_itoa(i8080op_readMemory(state, i) + (i8080op_readMemory(state, i + 1) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
+			}
+			pos.y += incY;
+		}
+		/*
+		sfText_setCharacterSize(renderText, 10);
+
+		#define X_POS_VRAM_COL 700
+		pos.x = X_POS_VRAM_COL;
+		pos.y = (10) + 4;
+
+		uint32_t tPixels = state->vid.width * state->vid.height;
+
+		sfText_setString(renderText, "VRAM:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+		for (uint32_t i = 1; i <= tPixels; i++) {
+			//log_info("vram %i at %f,%f", i, pos.x, pos.y);
+			//_itoa(i8080op_readMemory(state, i - 1 + state->vid.startAddress), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+			sfText_setString(renderText, i8080op_readMemory(state, i - 1 + state->vid.startAddress) ? "1": "0"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+			if (i % 32 == 0) {
+				pos.x = X_POS_VRAM_COL;
+				pos.y += incY / 2;
 			}
 			else {
-				sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+				pos.x += (11);
 			}
-
-			_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
-			_itoa(i8080op_readMemory(state, i), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_MEM_COL;
 		}
+		*/
+
+		#define X_POS_INST_TRC_COL 700
+		pos.x = X_POS_INST_TRC_COL;
+		pos.y = TEXT_SIZE + 4;
+
+		sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+		//sfText_setCharacterSize(renderText, 12);
+
+		sfText_setString(renderText, "Instruction trace:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
 		pos.y += incY;
-	}
 
-	#define X_POS_STACK_COL 550
-	pos.x = X_POS_STACK_COL;
-	pos.y = TEXT_SIZE + 4;
-
-	sfText_setString(renderText, "Stack:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
-	// Display the stack
-	for (int i = state->sp - 2; i < state->sp + 20; i+=2) {
-		if (i8080_boundsCheckMemIndex(state, i)) {
-			if (i == state->sp) {
-				sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the top of the stack in red
-			}
-			else {
-				sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
-			}
-
-			_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
-			_itoa(i8080op_readMemory(state, i) + (i8080op_readMemory(state, i+1) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
+		// Print the last instructions
+		int maxInstructionTrace = INSTRUCTION_TRACE_LEN > 10 ? 10 : INSTRUCTION_TRACE_LEN;
+		for (int i = 0; i < maxInstructionTrace; i++) {
+			sprintf(buf, "{-%i}[PC:%04X] %s(%02X) (TS:%04X) B1:%02X B2:%02X", i, state->previousInstructions[i].pc, state->previousInstructions[i].statusString, state->previousInstructions[i].opcode, state->previousInstructions[i].topStack, state->previousInstructions[i].b1, state->previousInstructions[i].b2);
+			sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+			pos.y += incY;
 		}
-		pos.y += incY;
-	}
-	/*
-	sfText_setCharacterSize(renderText, 10);
-
-	#define X_POS_VRAM_COL 700
-	pos.x = X_POS_VRAM_COL;
-	pos.y = (10) + 4;
-
-	uint32_t tPixels = state->vid.width * state->vid.height;
-
-	sfText_setString(renderText, "VRAM:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
-	for (uint32_t i = 1; i <= tPixels; i++) {
-		//log_info("vram %i at %f,%f", i, pos.x, pos.y);
-		//_itoa(i8080op_readMemory(state, i - 1 + state->vid.startAddress), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
-		sfText_setString(renderText, i8080op_readMemory(state, i - 1 + state->vid.startAddress) ? "1": "0"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
-		if (i % 32 == 0) {
-			pos.x = X_POS_VRAM_COL;
-			pos.y += incY / 2;
-		}
-		else {
-			pos.x += (11);
-		}
-	}
-	*/
-
-	#define X_POS_INST_TRC_COL 700
-	pos.x = X_POS_INST_TRC_COL;
-	pos.y = TEXT_SIZE + 4;
-
-	sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
-	//sfText_setCharacterSize(renderText, 12);
-	
-	sfText_setString(renderText, "Instruction trace:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
-	pos.y += incY;
-
-	// Print the last instructions
-	int maxInstructionTrace = INSTRUCTION_TRACE_LEN > 10 ? 10 : INSTRUCTION_TRACE_LEN;
-	for (int i = 0; i < maxInstructionTrace; i++) {
-		sprintf(buf, "{-%i}[PC:%04X] %s(%02X) (TS:%04X) B1:%02X B2:%02X", i, state->previousInstructions[i].pc, state->previousInstructions[i].statusString, state->previousInstructions[i].opcode, state->previousInstructions[i].topStack, state->previousInstructions[i].b1, state->previousInstructions[i].b2);
-		sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
-		pos.y += incY;
 	}
 
 	sfText_destroy(renderText);
@@ -414,6 +417,18 @@ void handleEvent(const sfEvent* evt, i8080State* state) {
 			state->mode = MODE_PAUSED;
 			state->waitCycles = 0;
 			i8080_cpuTick(state);
+			break;
+		case sfKeyF1:
+			state->mode = MODE_PAUSED;
+			i8080_dump(state);
+			break;
+		case sfKeyF2:
+			if (evt->key.shift) {
+				showStats = false;
+			}
+			else {
+				showStats = true;
+			}
 			break;
 		case sfKeyEscape:
 			shouldClose = true;
