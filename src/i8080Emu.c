@@ -26,6 +26,8 @@ void initGraphics(unsigned int width, unsigned int height);
 void closeGraphics();
 // Handle the events
 void handleEvent(const sfEvent* evt, i8080State* state);
+// Polls the input
+void pollInput(i8080State* state);
 // Render the state info for the window
 void renderStateInfo(i8080State* state, float frameTimeMillis);
 // Update the video buffer
@@ -39,6 +41,8 @@ sfEvent cEvent; // Event container
 sfFont* font = NULL;
 sfSprite* videoSprite = NULL;
 sfImage* videoImg = NULL;
+
+bool shouldClose = false;
 
 #define TEXT_SIZE 14
 
@@ -75,9 +79,9 @@ int main(int argc, char** argv) {
 	//memory[0x0001] = 0x00;
 
 	// inject "in a,0" at 0x0005 (signal to output some characters)
-	//writeMemory(&state, 0x05, 0xDB); //memory[0x0005] = 0xDB;
-	//writeMemory(&state, 0x06, 0x00); //memory[0x0006] = 0x00;
-	//writeMemory(&state, 0x07, 0xC9); //memory[0x0007] = 0xC9;
+	//i8080op_writeMemory(&state, 0x05, 0xDB); //memory[0x0005] = 0xDB;
+	//i8080op_writeMemory(&state, 0x06, 0x00); //memory[0x0006] = 0x00;
+	//i8080op_writeMemory(&state, 0x07, 0xC9); //memory[0x0007] = 0xC9;
 	//state.pc = 0x100;
 
 	// Create the timer
@@ -87,15 +91,18 @@ int main(int argc, char** argv) {
 	// Timing variables
 	float elapsedTime = 0;
 	float cycle_accumulator = 0;
-	int frame_interrupFreq =	4839;
+	int frame_interrupFreq = 4839;
 	bool frameInterruptFlag = false;
 
+	log_info("Initial pc: %04X", state.pc);
+
 	// Do emulation
-	while (state.valid) {
+	while (!shouldClose) {
 		// check events
 		while (sfRenderWindow_pollEvent(window, &cEvent)) {
 			handleEvent(&cEvent, &state);
 		}
+		pollInput(&state);
 
 		// Calculate the time passed since the last loop
 		time = sfClock_getElapsedTime(timer);
@@ -105,19 +112,19 @@ int main(int argc, char** argv) {
 
 		unsigned long cyclesPerFrame = state.clockFreqMHz * MHZ * (elapsedTime / 1000.0f);
 		//log_info("cyclesPerFrame: %i", cyclesPerFrame);
-		while (cyclesPerFrame > 0) {
-			cpuTick(&state);
+		while (cyclesPerFrame > 0 && state.mode == MODE_NORMAL) {
+			i8080_cpuTick(&state);
 			cyclesPerFrame--;
 		}
 
-		if (state.cyclesExecuted % frame_interrupFreq == 0) {
+		if (state.cyclesExecuted % frame_interrupFreq == 0 && state.mode != MODE_HLT) {
 			// Trigger CPU interrupt
 			//log_trace("-- VBlank interrupt");
 			if (frameInterruptFlag) {
-				executeInterrupt(&state, INTERRUPT_1);
+				i8080op_executeInterrupt(&state, INTERRUPT_1);
 			}
 			else {
-				executeInterrupt(&state, INTERRUPT_2);
+				i8080op_executeInterrupt(&state, INTERRUPT_2);
 			}
 			frameInterruptFlag = !frameInterruptFlag;
 		}
@@ -145,13 +152,16 @@ int main(int argc, char** argv) {
 		log_error("Unable to output opcodeUse table: failed to get file handle");
 	}
 	else {
+		int codesUsed = 0;
 		fprintf(fp, "Opcode use table\n------------------------------------------\n");
 		for (int i = 0; i < 0x100; i++) {
-			if (state.opcodeUse[i]) {
+			if (state.opcodeUse[i] == 1) {
 				fprintf(fp, "%02X: %s\n", i, i8080_decompile(i));
+				codesUsed++;
 			}
 		}
 		fprintf(fp, "------------------------------------------\n");
+		fprintf(fp, "Number used: %i / 256\n", codesUsed);
 		fclose(fp);
 	}
 
@@ -182,12 +192,18 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 
 	// Do the state rendering
 	sfVector2f pos;
-	#define X_INIT_POS 16
-	pos.x = X_INIT_POS;
-	pos.y = TEXT_SIZE + 4;
 	int incY = TEXT_SIZE + 2;
 	int xSpace = TEXT_SIZE * 14;
 
+	pos.x = 16;
+	pos.y = 550;
+	sfText_setString(renderText, "[BACKSPACE] --> HLT, [P] --> pause, [O] --> normal, [S] --> step"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+	sfText_setString(renderText, "Current mode:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	sfText_setString(renderText, getModeStr(state->mode)); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+
+	#define X_INIT_POS 16
+	pos.x = X_INIT_POS;
+	pos.y = TEXT_SIZE + 4;
 	char buf[80];
 
 	sfText_setString(renderText, "Registers:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
@@ -241,17 +257,21 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	_gcvt(state->clockFreqMHz, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	pos.y += incY;
-	sfText_setString(renderText, "instruction:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(readMemory(state, state->pc), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+	uint8_t opcode = i8080op_readMemory(state, state->pc);
+	sfText_setString(renderText, "Instruction:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(opcode, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "byte1:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(readMemory(state, state->pc + 1), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+	sfText_setString(renderText, "Status word:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	sfText_setString(renderText, i8080_decompile(opcode)); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "byte2:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(readMemory(state, state->pc), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+	sfText_setString(renderText, "Byte1:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(i8080op_readMemory(state, state->pc + 1), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "instr len:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(i8080_getInstructionLength(readMemory(state, state->pc)), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+	sfText_setString(renderText, "Byte2:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(i8080op_readMemory(state, state->pc + 2), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
+	sfText_setString(renderText, "Instr len:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	_itoa(i8080_getInstructionLength(i8080op_readMemory(state, state->pc)), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	pos.y += incY;
 	sfText_setString(renderText, "Video Memory Loc:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
@@ -277,7 +297,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 			}
 
 			_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
-			_itoa(readMemory(state, i), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_MEM_COL;
+			_itoa(i8080op_readMemory(state, i), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_MEM_COL;
 		}
 		pos.y += incY;
 	}
@@ -298,7 +318,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 			}
 
 			_itoa(i+2, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
-			_itoa(readMemory(state, i+1) + (readMemory(state, i+2) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
+			_itoa(i8080op_readMemory(state, i+1) + (i8080op_readMemory(state, i+2) << 8), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x = X_POS_STACK_COL;
 		}
 		pos.y += incY;
 	}
@@ -314,8 +334,8 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	sfText_setString(renderText, "VRAM:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 	for (uint32_t i = 1; i <= tPixels; i++) {
 		//log_info("vram %i at %f,%f", i, pos.x, pos.y);
-		//_itoa(readMemory(state, i - 1 + state->vid.startAddress), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
-		sfText_setString(renderText, readMemory(state, i - 1 + state->vid.startAddress) ? "1": "0"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+		//_itoa(i8080op_readMemory(state, i - 1 + state->vid.startAddress), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+		sfText_setString(renderText, i8080op_readMemory(state, i - 1 + state->vid.startAddress) ? "1": "0"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
 		if (i % 32 == 0) {
 			pos.x = X_POS_VRAM_COL;
 			pos.y += incY / 2;
@@ -336,14 +356,14 @@ void updateVideoBuffer(i8080State* state, sfImage* img) {
 	/*
 	for (int x = 0; x < state->vid.width; x++) {
 		for (int y = 0; y < state->vid.height; y++) {
-			uint8_t mVal = readMemory(state, 52 + state->vid.startAddress + (x / 8) + (y * state->vid.width));
+			uint8_t mVal = i8080op_readMemory(state, 52 + state->vid.startAddress + (x / 8) + (y * state->vid.width));
 			sfImage_setPixel(img, x, y, (mVal >> (x % 8)) & 0x1 ? on : off);
 		}
 	}
 	*/
 	for (int y = 0; y < state->vid.height; y++) {
 		for (int xByte = 0; xByte < 32; xByte++) {
-			uint8_t byte = readMemory(state, state->vid.startAddress + xByte + (y * 32));
+			uint8_t byte = i8080op_readMemory(state, state->vid.startAddress + xByte + (y * 32));
 			for (int xBit = 0; xBit < 8; xBit++) {
 				unsigned int bit = byte >> (7 - xBit);
 				sfImage_setPixel(img, xByte * xBit, y, bit ? on : off);
@@ -356,13 +376,40 @@ void handleEvent(const sfEvent* evt, i8080State* state) {
 	switch (evt->type) {
 	case sfEvtClosed:
 		// Close request
-		state->valid = false;
+		shouldClose = true;
+		break;
+
+	case sfEvtKeyPressed:
+		switch (evt->key.code) {
+		case sfKeyBackspace:
+			state->mode = MODE_HLT;
+			break;
+		case sfKeyP:
+			state->mode = MODE_PAUSED;
+			break;
+		case sfKeyO:
+			state->mode = MODE_NORMAL;
+			break;
+		case sfKeyS:
+			// Step
+			state->mode = MODE_PAUSED;
+			state->waitCycles = 0;
+			i8080_cpuTick(state);
+			break;
+		case sfKeyEscape:
+			shouldClose = true;
+			break;
+		}
 		break;
 
 	default:
 		//printf("Got unknown event from window\n");
 		break;
 	}
+}
+
+void pollInput(i8080State* state) {
+
 }
 
 void initGraphics(unsigned int width, unsigned int height) {

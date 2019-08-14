@@ -9,6 +9,8 @@ Utility functions and types
 
 #include "log.h"
 
+#define INSTRUCTION_TRACE_LEN 200
+
 //Memory size of the i8080
 #define i8080_MEMORY_SIZE 65536
 
@@ -50,6 +52,15 @@ typedef signed short int16_t;
 typedef unsigned int uint32_t;
 typedef int int32_t;
 
+typedef struct prevInstruction {
+	uint8_t opcode;
+	uint16_t pc;
+	uint16_t psw;
+	uint16_t topStack;
+	unsigned long cycleNum;
+	char* statusString;
+} prevInstruction;
+
 typedef struct flagRegister {
 	unsigned int s : 1; // sign flag
 	unsigned int z : 1; // zero flag
@@ -59,7 +70,7 @@ typedef struct flagRegister {
 	unsigned int zero : 1; // always zero, bits 3 and 5
 	unsigned int one : 1; // always one, bit 1
 	unsigned int ien : 1; // Is the interrupt system enabled?
-	unsigned int isi : 1; // Are we currently interrupted?
+	unsigned int isi; // Are we currently interrupted?
 } flagRegister;
 typedef struct videoMemoryInfo {
 	uint16_t startAddress;
@@ -79,13 +90,21 @@ typedef struct i8080State {
 	uint8_t* memory;
 	int memorySize;
 	float clockFreqMHz;
-	unsigned int valid : 1;
+	int mode;
 	int waitCycles;
 	struct flagRegister f;
 	struct videoMemoryInfo vid;
 	unsigned long cyclesExecuted;
 	unsigned int opcodeUse[0x100];
+	prevInstruction previousInstructions[INSTRUCTION_TRACE_LEN];
+	char* statusString;
 } i8080State;
+
+enum i8080Mode {
+	MODE_NORMAL,
+	MODE_PAUSED,
+	MODE_HLT
+};
 
 enum i8080Opcode {
 	// Instr	Code
@@ -352,6 +371,9 @@ void init8080(i8080State* state);
 
 // Get a line from the console
 int getConsoleLine(char* buf, int bufLen);
+
+// Returns the MODE in a human-readable format
+const char* getModeStr(int mode);
 
 // Checks if a memory index is in range of the memory buffer
 bool i8080_boundsCheckMemIndex(i8080State* state, int index);

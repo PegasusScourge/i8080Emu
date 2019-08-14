@@ -7,18 +7,33 @@ CPU file
 */
 #include "i8080.h"
 
-void cpuTick(i8080State* state) {
+void i8080_cpuTick(i8080State* state) {
 	i8080_stateCheck(state); // verify the state is ok
 
 	if (state->waitCycles == 0) {
 		// We don't need to wait cycles
-		uint8_t opcode = readMemory(state, state->pc);
+		uint8_t opcode = i8080op_readMemory(state, state->pc);
 
 		// Increment opcode use
 		state->opcodeUse[opcode] = 1;
+		// set the status string
+		state->statusString = i8080_decompile(opcode);
+
+		// Register for instruction tracing
+		if (opcode != NOP) {
+			for (int i = INSTRUCTION_TRACE_LEN - 1; i > 0; i--) {
+				state->previousInstructions[i] = state->previousInstructions[i - 1];
+			}
+			state->previousInstructions[0].cycleNum = state->cyclesExecuted;
+			state->previousInstructions[0].opcode = opcode;
+			state->previousInstructions[0].pc = state->pc;
+			state->previousInstructions[0].psw = i8080op_getPSW(state);
+			state->previousInstructions[0].statusString = state->statusString;
+			state->previousInstructions[0].topStack = i8080op_peakStack(state);
+		}
 
 		// Get the result of the opcode execution to determine the number of clock cycles we need to take
-		bool success = executeOpcode(state, opcode);
+		bool success = i8080_executeOpcode(state, opcode);
 
 		// Put the correct wait time in clock cycles
 		state->waitCycles = success ? i8080_getInstructionClockCycles(opcode) : i8080_getFailedInstructionClockCycles(opcode);
@@ -36,10 +51,51 @@ void cpuTick(i8080State* state) {
 	state->cyclesExecuted++;
 }
 
-uint8_t readMemory(i8080State* state, uint16_t index) {
+void i8080_panic(i8080State* state) {
+	log_fatal("i8080 PANIC has occured, cycle %ul", state->cyclesExecuted);
+	state->mode = MODE_HLT; // set invalid
+
+	// Dump the state
+	FILE* dumpFile = fopen("i8080_dump.txt", "w");
+	if (dumpFile == NULL) {
+		log_error("Failed to create dump file for state and previous functions");
+		return;
+	}
+
+	fprintf(dumpFile, "Registers:\nB:%02X C:%02X\nD:%02X E:%02X\nH:%02X L:%02X\nPSW:%04X (%s)\n", state->b, state->c, state->d, state->e, state->h, state->l, i8080op_getPSW(state), i8080_decToBin(i8080op_getPSW(state)));
+	fprintf(dumpFile, "PC: %04X\nSP: %04X\n", state->pc, state->sp);
+	fprintf(dumpFile, "------\nInstruction trace (newest instruction first):\n");
+
+	// Print the last instructions
+	for (int i = 0; i < INSTRUCTION_TRACE_LEN; i++) {
+		fprintf(dumpFile, "{-%i}[%ul][PC:%04X] %s(%02X) (PSW:%04X, %s)(TS:%04X)\n", i, state->previousInstructions[i].cycleNum, state->previousInstructions[i].pc, state->previousInstructions[i].statusString, state->previousInstructions[i].opcode, state->previousInstructions[i].psw, i8080_decToBin(state->previousInstructions[i].psw), state->previousInstructions[i].topStack);
+	}
+
+	fprintf(dumpFile, "------\n\nMemory dump in file 'mem.dump'");
+	fclose(dumpFile);
+
+	// Create the memory dump file
+	FILE* memDump = fopen("mem.dump", "w");
+	if (memDump == NULL) {
+		log_error("Failed to create dump file for memory");
+		return;
+	}
+
+	fprintf(memDump, "Memory contents:");
+	for (int i = 0; i < i8080_MEMORY_SIZE; i++) {
+		if (i % 16 == 0) {
+			fprintf(memDump, "\n[%04X] ", i);
+		}
+		fprintf(memDump, "%02X ", state->memory[i]);
+	}
+	fprintf(memDump, "\n\nEnd memory\n");
+	fclose(memDump);
+}
+
+uint8_t i8080op_readMemory(i8080State* state, uint16_t index) {
 	// The bounds checking function raises any necessary flags in case of error
 	if (i8080_boundsCheckMemIndex(state, index)) {
-		if (index > 0x3fff)
+		while (index > 0x3fff)
 			index -= 0x4000;
 		return state->memory[index];
 	}
@@ -47,10 +103,10 @@ uint8_t readMemory(i8080State* state, uint16_t index) {
 	return 0;
 }
 
-void writeMemory(i8080State* state, uint16_t index, uint8_t val) {
+void i8080op_writeMemory(i8080State* state, uint16_t index, uint8_t val) {
 	// The bounds checking function raises any necessary flags in case of error
 	if (i8080_boundsCheckMemIndex(state, index)) {
-		if (index > 0x3fff)
+		while (index > 0x3fff)
 			index -= 0x4000;
 		state->memory[index] = val;
 	}
@@ -59,7 +115,7 @@ void writeMemory(i8080State* state, uint16_t index, uint8_t val) {
 	}
 }
 
-void setPC(i8080State* state, uint16_t v) {
+void i8080op_setPC(i8080State* state, uint16_t v) {
 	if (i8080_boundsCheckMemIndex(state, v)) {
 		state->pc = v;
 	}
@@ -68,7 +124,7 @@ void setPC(i8080State* state, uint16_t v) {
 	}
 }
 
-void setSP(i8080State* state, uint16_t v) {
+void i8080op_setSP(i8080State* state, uint16_t v) {
 	if (i8080_boundsCheckMemIndex(state, v)) {
 		state->sp = v;
 	}
@@ -77,19 +133,19 @@ void setSP(i8080State* state, uint16_t v) {
 	}
 }
 
-void pushStack(i8080State* state, uint16_t v) {
-	writeMemory(state, state->sp, (v & 0xFF00) >> 8);
-	writeMemory(state, state->sp - 1, v & 0x00FF);
-	setSP(state, state->sp - 2);
+void i8080op_pushStack(i8080State* state, uint16_t v) {
+	i8080op_writeMemory(state, state->sp, (v & 0xFF00) >> 8);
+	i8080op_writeMemory(state, state->sp - 1, v & 0x00FF);
+	i8080op_setSP(state, state->sp - 2);
 }
 
-uint16_t peakStack(i8080State* state) {
-	return ((uint8_t)readMemory(state, state->sp + 2) << 8) + readMemory(state, state->sp + 1);
+uint16_t i8080op_peakStack(i8080State* state) {
+	return ((uint8_t)i8080op_readMemory(state, state->sp + 2) << 8) + i8080op_readMemory(state, state->sp + 1);
 }
 
-uint16_t popStack(i8080State* state) {
-	uint16_t stckVal = peakStack(state);
-	setSP(state, state->sp + 2);
+uint16_t i8080op_popStack(i8080State* state) {
+	uint16_t stckVal = i8080op_peakStack(state);
+	i8080op_setSP(state, state->sp + 2);
 	return stckVal;
 }
 
@@ -112,39 +168,39 @@ void port_out(i8080State* state, uint8_t port, uint8_t value) {
 	//log_info("[%04X] OUT(%02X) port==%i w/val %i", state->pc, OUT, port, value);
 }
 
-void executeRET(i8080State* state) {
-	uint16_t stckVal = popStack(state);
-	//uint8_t returningOpcode = readMemory(state, stckVal);
+void i8080op_executeRET(i8080State* state) {
+	uint16_t stckVal = i8080op_popStack(state);
+	//uint8_t returningOpcode = i8080op_readMemory(state, stckVal);
 	uint8_t returningOpcode = 0;
 	//uint16_t pcInc = i8080_getInstructionLength(returningOpcode);
 	uint16_t pcInc = 0;
 
-	log_debug("executeRET; stckVal: %04X, retOpcode: %02X, pcInc: %04X", stckVal, returningOpcode, pcInc);
+	log_debug("i8080op_executeRET; stckVal: %04X, retOpcode: %02X, pcInc: %04X", stckVal, returningOpcode, pcInc);
 
-	setPC(state, stckVal + pcInc);
+	i8080op_setPC(state, stckVal + pcInc);
 
 	if (state->f.isi)
 		log_trace("--- END INTERRUPT ---");
 	state->f.isi = 0; // clear isInterrupted bit
 }
 
-void executeCALL(i8080State* state, uint16_t address) {
-	uint8_t returningOpcode = readMemory(state, state->pc);
+void i8080op_executeCALL(i8080State* state, uint16_t address) {
+	uint8_t returningOpcode = i8080op_readMemory(state, state->pc);
 	uint16_t pcInc = i8080_getInstructionLength(returningOpcode);
-	pushStack(state, state->pc + pcInc);
-	setPC(state, address); // Set the pc to address
+	i8080op_pushStack(state, state->pc + pcInc);
+	i8080op_setPC(state, address); // Set the pc to address
 }
 
-void executeInterrupt(i8080State* state, uint16_t address) {
-	if (!state->f.isi && state->f.ien) {
+void i8080op_executeInterrupt(i8080State* state, uint16_t address) {
+	if (state->f.isi == 0 && state->f.ien) {
 		log_trace("--- INTERRUPT %i ---", address);
-		state->f.isi = 1; // set isInterrupted bit
-		pushStack(state, state->pc);
-		setPC(state, address); // Set the pc to address
+		state->f.isi = address; // set isInterrupted bit
+		i8080op_pushStack(state, state->pc);
+		i8080op_setPC(state, address); // Set the pc to address
 	}
 }
 
-bool executeOpcode(i8080State* state, uint8_t opcode) {
+bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 	bool success = true;
 	bool pcShouldIncrement = true;
 
@@ -157,13 +213,9 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	uint8_t store8_1;
 	uint8_t store8_2;
 
-	// Load the extra bytes as needed
-	if (byteLen >= 2) {
-		byte1 = readMemory(state, state->pc + 1);
-	}
-	if (byteLen >= 3) {
-		byte2 = readMemory(state, state->pc + 2);
-	}
+	// Load the extra bytes
+	byte1 = i8080op_readMemory(state, state->pc + 1);
+	byte2 = i8080op_readMemory(state, state->pc + 2);
 
 	switch (opcode) {
 	case NOP: // Do nothing
@@ -175,7 +227,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case STAX_B: // write value of A to memory[BC]
 		log_trace("[%04X] STAX_B(%02X) BC:%04X A:%02X", state->pc, STAX_B, i8080op_getBC(state), state->a);
-		writeMemory(state, i8080op_getBC(state), state->a);
+		i8080op_writeMemory(state, i8080op_getBC(state), state->a);
 		break;
 	case INX_B: // Increment BC
 		store16_1 = 1 + i8080op_getBC(state);
@@ -205,8 +257,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getBC(state)));
 		break;
 	case LDAX_B: // Load memory pointed to by BC into A
-		log_trace("[%04X] LDAX_B(%02X) %02X", state->pc, LDAX_B, readMemory(state, i8080op_getBC(state)));
-		state->a = readMemory(state, i8080op_getBC(state));
+		log_trace("[%04X] LDAX_B(%02X) %02X", state->pc, LDAX_B, i8080op_readMemory(state, i8080op_getBC(state)));
+		state->a = i8080op_readMemory(state, i8080op_getBC(state));
 		break;
 	case DCX_B: // Decrement BC by 1
 		log_trace("[%04X] DCX_B(%02X) %04X", state->pc, DCX_B, i8080op_getBC(state));
@@ -236,7 +288,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case STAX_D: // write value of A to memory[DE]
 		log_trace("[%04X] STAX_D(%02X) BC:%04X A:%02X", state->pc, STAX_D, i8080op_getDE(state), state->a);
-		writeMemory(state, i8080op_getDE(state), state->a);
+		i8080op_writeMemory(state, i8080op_getDE(state), state->a);
 		break;
 	case INX_D: // Increment DE
 		log_trace("[%04X] INX_D(%02X)", state->pc, INX_D);
@@ -267,8 +319,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getDE(state)));
 		break;
 	case LDAX_D: // Load memory pointed to by DE into A
-		log_trace("[%04X] LDAX_D(%02X) %02X", state->pc, LDAX_D, readMemory(state, i8080op_getDE(state)));
-		state->a = readMemory(state, i8080op_getDE(state));
+		log_trace("[%04X] LDAX_D(%02X) %02X", state->pc, LDAX_D, i8080op_readMemory(state, i8080op_getDE(state)));
+		state->a = i8080op_readMemory(state, i8080op_getDE(state));
 		break;
 	case DCX_D: // Decrement DE by 1
 		log_trace("[%04X] DCX_D(%02X) %04X", state->pc, DCX_D, i8080op_getDE(state));
@@ -302,8 +354,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case SHLD: // write value of HL to memory[store16_1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
 		log_trace("[%04X] SHLD(%02X) %04X HL:%04X", state->pc, SHLD, store16_1, i8080op_getHL(state));
-		writeMemory(state, store16_1, state->l);
-		writeMemory(state, store16_1 + 1, state->h);
+		i8080op_writeMemory(state, store16_1, state->l);
+		i8080op_writeMemory(state, store16_1 + 1, state->h);
 		break;
 	case INX_H: // Increment HL
 		log_trace("[%04X] INX_H(%02X)", state->pc, INX_H);
@@ -339,8 +391,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case LHLD: // Load L with memory[store16_1] and H with memory[store16_1 + 1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
 		log_trace("[%04X] LHLD(%02X) %04X", state->pc, LHLD, store16_1);
-		state->l = readMemory(state, store16_1);
-		state->h = readMemory(state, store16_1 + 1);
+		state->l = i8080op_readMemory(state, store16_1);
+		state->h = i8080op_readMemory(state, store16_1 + 1);
 		break;
 	case DCX_H: // Decrement HL by 1
 		log_trace("[%04X] DCX_H(%02X) %04X", state->pc, DCX_H, i8080op_getHL(state));
@@ -367,34 +419,34 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case LXI_SP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // D16
 		log_trace("[%04X] LXI_SP(%02X) %04X (%02X %02X)", state->pc, LXI_SP, store16_1, byte1, byte2);
-		setSP(state, store16_1); // Set the sp to D16
+		i8080op_setSP(state, store16_1); // Set the sp to D16
 		break;
 	case STA: // write value of A to memory[store16_1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
 		log_trace("[%04X] STA(%02X) %04X A:%02X", state->pc, STA, store16_1, state->a);
-		writeMemory(state, store16_1, state->a);
+		i8080op_writeMemory(state, store16_1, state->a);
 		break;
 	case INX_SP:
 		log_trace("[%04X] INX_SP(%02X) %04X", state->pc, INX_SP, state->sp);
-		setSP(state, state->sp + 1);
+		i8080op_setSP(state, state->sp + 1);
 		break;
 	case INR_M:
-		store8_1 = readMemory(state, i8080op_getHL(state));
+		store8_1 = i8080op_readMemory(state, i8080op_getHL(state));
 		log_trace("[%04X] INR_M(%02X) [%04X]%02X", state->pc, INR_M, i8080op_getHL(state), store8_1);
 		store8_1 += 1;
 		i8080op_setZSPAC(state, store8_1);
-		writeMemory(state, i8080op_getHL(state), store8_1);
+		i8080op_writeMemory(state, i8080op_getHL(state), store8_1);
 		break;
 	case DCR_M:
-		store8_1 = readMemory(state, i8080op_getHL(state));
+		store8_1 = i8080op_readMemory(state, i8080op_getHL(state));
 		log_trace("[%04X] DCR_M(%02X) [%04X]%02X", state->pc, DCR_M, i8080op_getHL(state), store8_1);
 		store8_1 -= 1;
 		i8080op_setZSPAC(state, store8_1);
-		writeMemory(state, i8080op_getHL(state), store8_1);
+		i8080op_writeMemory(state, i8080op_getHL(state), store8_1);
 		break;
 	case MVI_M: // Put byte1 into memory[HL]
 		log_trace("[%04X] MVI_M(%02X) %02X --> [%04X]", state->pc, MVI_M, byte1, i8080op_getHL(state));
-		writeMemory(state, i8080op_getHL(state), byte1);
+		i8080op_writeMemory(state, i8080op_getHL(state), byte1);
 		break;
 	case STC:
 		log_trace("[%04X] STC(%02X) 1", state->pc, STC);
@@ -407,11 +459,11 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case LDA: // load value of A from memory[store16_1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
 		log_trace("[%04X] LDA(%02X) %04X", state->pc, LDA, store16_1);
-		state->a = readMemory(state, store16_1);
+		state->a = i8080op_readMemory(state, store16_1);
 		break;
 	case DCX_SP:
 		log_trace("[%04X] DCX_SP(%02X) %04X", state->pc, DCX_SP, state->sp);
-		setSP(state, state->sp - 1);
+		i8080op_setSP(state, state->sp - 1);
 		break;
 	case INR_A:
 		log_trace("[%04X] INR_A(%02X) %02X", state->pc, INR_A, state->a);
@@ -457,7 +509,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_BM:
 		log_trace("[%04X] MOV_BM(%02X) %04X", state->pc, MOV_BM, i8080op_getHL(state));
-		state->b = readMemory(state, i8080op_getHL(state));
+		state->b = i8080op_readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_BA:
 		log_trace("[%04X] MOV_BA(%02X)", state->pc, MOV_BA);
@@ -489,7 +541,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_CM:
 		log_trace("[%04X] MOV_CM(%02X) %04X", state->pc, MOV_CM, i8080op_getHL(state));
-		state->c = readMemory(state, i8080op_getHL(state));
+		state->c = i8080op_readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_CA:
 		log_trace("[%04X] MOV_CA(%02X)", state->pc, MOV_CA);
@@ -521,7 +573,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_DM:
 		log_trace("[%04X] MOV_DM(%02X) %04X", state->pc, MOV_DM, i8080op_getHL(state));
-		state->d = readMemory(state, i8080op_getHL(state));
+		state->d = i8080op_readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_DA:
 		log_trace("[%04X] MOV_DA(%02X)", state->pc, MOV_DA);
@@ -553,7 +605,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_EM:
 		log_trace("[%04X] MOV_EM(%02X) %04X", state->pc, MOV_EM, i8080op_getHL(state));
-		state->e = readMemory(state, i8080op_getHL(state));
+		state->e = i8080op_readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_EA:
 		log_trace("[%04X] MOV_EA(%02X) (REEEEEE)", state->pc, MOV_EA);
@@ -585,7 +637,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_HM:
 		log_trace("[%04X] MOV_HM(%02X) %04X", state->pc, MOV_HM, i8080op_getHL(state));
-		state->h = readMemory(state, i8080op_getHL(state));
+		state->h = i8080op_readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_HA:
 		log_trace("[%04X] MOV_HA(%02X) (HA!)", state->pc, MOV_HA);
@@ -617,7 +669,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_LM:
 		log_trace("[%04X] MOV_LM(%02X) %04X", state->pc, MOV_LM, i8080op_getHL(state));
-		state->l = readMemory(state, i8080op_getHL(state));
+		state->l = i8080op_readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_LA:
 		log_trace("[%04X] MOV_LA(%02X) (la la la la la la la)", state->pc, MOV_LA);
@@ -625,36 +677,36 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_MB:
 		log_trace("[%04X] MOV_MB(%02X)", state->pc, MOV_MB);
-		writeMemory(state, i8080op_getHL(state), state->b);
+		i8080op_writeMemory(state, i8080op_getHL(state), state->b);
 		break;
 	case MOV_MC:
 		log_trace("[%04X] MOV_MC(%02X)", state->pc, MOV_MC);
-		writeMemory(state, i8080op_getHL(state), state->c);
+		i8080op_writeMemory(state, i8080op_getHL(state), state->c);
 		break;
 	case MOV_MD:
 		log_trace("[%04X] MOV_MD(%02X)", state->pc, MOV_MD);
-		writeMemory(state, i8080op_getHL(state), state->d);
+		i8080op_writeMemory(state, i8080op_getHL(state), state->d);
 		break;
 	case MOV_ME:
 		log_trace("[%04X] MOV_ME(%02X)", state->pc, MOV_ME);
-		writeMemory(state, i8080op_getHL(state), state->e);
+		i8080op_writeMemory(state, i8080op_getHL(state), state->e);
 		break;
 	case MOV_MH:
 		log_trace("[%04X] MOV_MH(%02X)", state->pc, MOV_MH);
-		writeMemory(state, i8080op_getHL(state), state->h);
+		i8080op_writeMemory(state, i8080op_getHL(state), state->h);
 		break;
 	case MOV_ML:
 		log_trace("[%04X] MOV_ML(%02X)", state->pc, MOV_ML);
-		writeMemory(state, i8080op_getHL(state), state->h);
+		i8080op_writeMemory(state, i8080op_getHL(state), state->h);
 		break;
 	case MOV_MA:
 		log_trace("[%04X] MOV_MA(%02X)", state->pc, MOV_MA);
-		writeMemory(state, i8080op_getHL(state), state->a);
+		i8080op_writeMemory(state, i8080op_getHL(state), state->a);
 		break;
 	case HLT:
 		// HALT THE PROGRAM?
 		log_info("[%04X] HLT(%02X)", state->pc, HLT);
-		state->valid = false;
+		state->mode = MODE_HLT;
 		break;
 	case MOV_AB:
 		log_trace("[%04X] MOV_AB(%02X)", state->pc, MOV_AB);
@@ -682,7 +734,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_AM:
 		log_trace("[%04X] MOV_AM(%02X) %04X", state->pc, MOV_AM, i8080op_getHL(state));
-		state->l = readMemory(state, i8080op_getHL(state));
+		state->l = i8080op_readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_AA:
 		log_trace("[%04X] MOV_AA(%02X) (British car recovery joke or screaming?)", state->pc, MOV_AA);
@@ -720,7 +772,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case ADD_M: // Adds memory[HL] to A
 		log_trace("[%04X] ADD_M(%02X)", state->pc, ADD_M);
-		state->a = i8080op_addCarry8(state, state->a, readMemory(state, i8080op_getHL(state)));
+		state->a = i8080op_addCarry8(state, state->a, i8080op_readMemory(state, i8080op_getHL(state)));
 		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADD_A: // Adds A to A
@@ -760,7 +812,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case ADC_M: // Adds memory[HL] to A
 		log_trace("[%04X] ADC_M(%02X)", state->pc, ADC_M);
-		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, readMemory(state, i8080op_getHL(state))), state->f.c);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, i8080op_readMemory(state, i8080op_getHL(state))), state->f.c);
 		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_A: // Adds A to A
@@ -800,7 +852,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case SUB_M: // takes memory[HL] from A
 		log_trace("[%04X] SUB_M(%02X)", state->pc, SUB_M);
-		state->a = i8080op_subCarry8(state, state->a, readMemory(state, i8080op_getHL(state)));
+		state->a = i8080op_subCarry8(state, state->a, i8080op_readMemory(state, i8080op_getHL(state)));
 		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_A: // takes A from A
@@ -840,7 +892,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case SBB_M:
 		log_trace("[%04X] SBB_M(%02X)", state->pc, SBB_M);
-		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, readMemory(state, i8080op_getHL(state))), state->f.c);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, i8080op_readMemory(state, i8080op_getHL(state))), state->f.c);
 		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_A:
@@ -880,7 +932,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case ANA_M:
 		log_trace("[%04X] ANA_L(%02X)", state->pc, ANA_M);
-		state->a = state->a & readMemory(state, i8080op_getHL(state));
+		state->a = state->a & i8080op_readMemory(state, i8080op_getHL(state));
 		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_A:
@@ -920,7 +972,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case XRA_M:
 		log_trace("[%04X] XRA_M(%02X)", state->pc, XRA_M);
-		state->a = state->a ^ readMemory(state, i8080op_getHL(state));
+		state->a = state->a ^ i8080op_readMemory(state, i8080op_getHL(state));
 		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_A:
@@ -960,7 +1012,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case ORA_M:
 		log_trace("[%04X] ORA_M(%02X)", state->pc, ORA_M);
-		state->a = state->a | readMemory(state, i8080op_getHL(state));
+		state->a = state->a | i8080op_readMemory(state, i8080op_getHL(state));
 		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_A:
@@ -1000,7 +1052,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case CMP_M: // takes memory[HL] from A
 		log_trace("[%04X] CMP_M(%02X)", state->pc, CMP_M);
-		store8_1 = i8080op_subCarry8(state, state->a, readMemory(state, i8080op_getHL(state)));
+		store8_1 = i8080op_subCarry8(state, state->a, i8080op_readMemory(state, i8080op_getHL(state)));
 		i8080op_setZSPAC(state, store8_1);
 		break;
 	case CMP_A: // takes A from A
@@ -1012,40 +1064,40 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] RNZ(%02X)", state->pc, RNZ);
 		if (!state->f.z) {
 			pcShouldIncrement = false;
-			executeRET(state);
+			i8080op_executeRET(state);
 		}
 		success = !state->f.z;
 		break;
 	case POP_B:
 		log_trace("[%04X] POP_B(%02X)", state->pc, POP_B);
-		i8080op_putBC16(state, popStack(state));
+		i8080op_putBC16(state, i8080op_popStack(state));
 		break;
 	case JNZ:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JNZ(%02X) %04X (%02X %02X) : %i", state->pc, JNZ, store16_1, byte1, byte2, !state->f.z);
 		if (!state->f.z) {
-			setPC(state, store16_1); // Set the pc to jmpPos
+			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
 	case JMP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JMP(%02X) %04X (%02X %02X)", state->pc, JMP, store16_1, byte1, byte2);
-		setPC(state, store16_1); // Set the pc to jmpPos
+		i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case CNZ:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CNZ(%02X) %04X (%02X %02X) : %i", state->pc, CNZ, store16_1, byte1, byte2, !state->f.z);
 		if (!state->f.z) {
-			executeCALL(state, store16_1);
+			i8080op_executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		success = !state->f.z;
 		break;
 	case PUSH_B:
 		log_trace("[%04X] PUSH_B(%02X) %04X", state->pc, PUSH_B, i8080op_getBC(state));
-		pushStack(state, i8080op_getBC(state));
+		i8080op_pushStack(state, i8080op_getBC(state));
 		break;
 	case ADI: // Adds D8 to A
 		log_trace("[%04X] ADI(%02X) %02X", state->pc, ADI, byte1);
@@ -1054,27 +1106,27 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_0: // Call $0x0
 		log_trace("[%04X] RST_0(%02X)", state->pc, RST_0);
-		executeCALL(state, INTERRUPT_0);
+		i8080op_executeCALL(state, INTERRUPT_0);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RZ:
 		log_trace("[%04X] RZ(%02X)", state->pc, RZ);
 		if (state->f.z) {
 			pcShouldIncrement = false;
-			executeRET(state);
+			i8080op_executeRET(state);
 		}
 		success = state->f.z;
 		break;
 	case RET:
 		log_trace("[%04X] RET(%02X)", state->pc, RET);
 		pcShouldIncrement = false;
-		executeRET(state);
+		i8080op_executeRET(state);
 		break;
 	case JZ:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JZ(%02X) %04X (%02X %02X) : %i", state->pc, JZ, store16_1, byte1, byte2, !state->f.z);
 		if (state->f.z) {
-			setPC(state, store16_1); // Set the pc to jmpPos
+			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
@@ -1082,7 +1134,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CNZ(%02X) %04X (%02X %02X) : %i", state->pc, CNZ, store16_1, byte1, byte2, state->f.z);
 		if (state->f.z) {
-			executeCALL(state, store16_1);
+			i8080op_executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		success = state->f.z;
@@ -1090,7 +1142,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case CALL:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CALL(%02X) %04X (%02X %02X)", state->pc, CALL, store16_1, byte1, byte2);
-		executeCALL(state, store16_1);
+		i8080op_executeCALL(state, store16_1);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case ACI: // Adds D8 to A
@@ -1100,26 +1152,26 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_1:
 		log_trace("[%04X] RST_1(%02X)", state->pc, RST_1);
-		executeCALL(state, INTERRUPT_1);
+		i8080op_executeCALL(state, INTERRUPT_1);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RNC:
 		log_trace("[%04X] RNC(%02X)", state->pc, RNC);
 		if (!state->f.c) {
 			pcShouldIncrement = false;
-			executeRET(state);
+			i8080op_executeRET(state);
 		}
 		success = !state->f.c;
 		break;
 	case POP_D:
 		log_trace("[%04X] POP_D(%02X)", state->pc, POP_D);
-		i8080op_putDE16(state, popStack(state));
+		i8080op_putDE16(state, i8080op_popStack(state));
 		break;
 	case JNC:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JNC(%02X) %04X (%02X %02X) : %i", state->pc, JNC, store16_1, byte1, byte2, !state->f.c);
 		if (!state->f.c) {
-			setPC(state, store16_1); // Set the pc to jmpPos
+			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
@@ -1131,14 +1183,14 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CNC(%02X) %04X (%02X %02X) : %i", state->pc, CNC, store16_1, byte1, byte2, !state->f.z);
 		if (!state->f.c) {
-			executeCALL(state, store16_1);
+			i8080op_executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		success = !state->f.c;
 		break;
 	case PUSH_D:
 		log_trace("[%04X] PUSH_D(%02X) %04X", state->pc, PUSH_D, i8080op_getDE(state));
-		pushStack(state, i8080op_getDE(state));
+		i8080op_pushStack(state, i8080op_getDE(state));
 		break;
 	case SUI: // takes D8 from A
 		log_trace("[%04X] SUI(%02X) %02X", state->pc, SUI, byte1);
@@ -1147,14 +1199,14 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_2:
 		log_trace("[%04X] RST_2(%02X)", state->pc, RST_2);
-		executeCALL(state, INTERRUPT_2);
+		i8080op_executeCALL(state, INTERRUPT_2);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RC:
 		log_trace("[%04X] RC(%02X)", state->pc, RC);
 		if (state->f.c) {
 			pcShouldIncrement = false;
-			executeRET(state);
+			i8080op_executeRET(state);
 		}
 		success = state->f.c;
 		break;
@@ -1162,7 +1214,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JC(%02X) %04X (%02X %02X) : %i", state->pc, JC, store16_1, byte1, byte2, state->f.c);
 		if (state->f.c) {
-			setPC(state, store16_1); // Set the pc to jmpPos
+			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
@@ -1173,7 +1225,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CC(%02X) %04X (%02X %02X) : %i", state->pc, CC, store16_1, byte1, byte2, state->f.c);
 		if (state->f.c) {
-			executeCALL(state, store16_1);
+			i8080op_executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		success = state->f.c;
@@ -1185,47 +1237,47 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_3:
 		log_trace("[%04X] RST_3(%02X)", state->pc, RST_3);
-		executeCALL(state, INTERRUPT_3);
+		i8080op_executeCALL(state, INTERRUPT_3);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RPO:
 		log_trace("[%04X] RPO(%02X)", state->pc, RPO);
 		if (!state->f.p) {
 			pcShouldIncrement = false;
-			executeRET(state);
+			i8080op_executeRET(state);
 		}
 		success = !state->f.p;
 		break;
 	case POP_H:
 		log_trace("[%04X] POP_H(%02X)", state->pc, POP_H);
-		i8080op_i8080op_putHL16(state, popStack(state));
+		i8080op_i8080op_putHL16(state, i8080op_popStack(state));
 		break;
 	case JPO:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JPO(%02X) %04X (%02X %02X) : %i", state->pc, JPO, store16_1, byte1, byte2, !state->f.p);
 		if (!state->f.p) {
-			setPC(state, store16_1); // Set the pc to jmpPos
+			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
 	case XTHL:
 		log_trace("[%04X] XTHL(%02X)", state->pc, XTHL);
-		store16_1 = popStack(state);
-		pushStack(state, i8080op_getHL(state));
+		store16_1 = i8080op_popStack(state);
+		i8080op_pushStack(state, i8080op_getHL(state));
 		i8080op_i8080op_putHL16(state, store16_1);
 		break;
 	case CPO:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CPO(%02X) %04X (%02X %02X) : %i", state->pc, CPO, store16_1, byte1, byte2, !state->f.p);
 		if (!state->f.p) {
-			executeCALL(state, store16_1);
+			i8080op_executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		success = state->f.p;
 		break;
 	case PUSH_H:
 		log_trace("[%04X] PUSH_H(%02X) %04X", state->pc, PUSH_H, i8080op_getHL(state));
-		pushStack(state, i8080op_getHL(state));
+		i8080op_pushStack(state, i8080op_getHL(state));
 		break;
 	case ANI:
 		log_trace("[%04X] ANI(%02X) %02X", state->pc, ANI, byte1);
@@ -1234,27 +1286,27 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_4:
 		log_trace("[%04X] RST_4(%02X)", state->pc, RST_4);
-		executeCALL(state, INTERRUPT_4);
+		i8080op_executeCALL(state, INTERRUPT_4);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RPE:
 		log_trace("[%04X] RPE(%02X)", state->pc, RPE);
 		if (state->f.p) {
 			pcShouldIncrement = false;
-			executeRET(state);
+			i8080op_executeRET(state);
 		}
 		success = state->f.p;
 		break;
 	case PCHL:
 		log_trace("[%04X] PCHL(%02X)", state->pc, PCHL);
-		setPC(state, i8080op_getHL(state));
+		i8080op_setPC(state, i8080op_getHL(state));
 		pcShouldIncrement = false;
 		break;
 	case JPE:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JPE(%02X) %04X (%02X %02X) : %i", state->pc, JPE, store16_1, byte1, byte2, state->f.p);
 		if (state->f.p) {
-			setPC(state, store16_1); // Set the pc to jmpPos
+			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
@@ -1268,7 +1320,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CPE(%02X) %04X (%02X %02X) : %i", state->pc, CPE, store16_1, byte1, byte2, state->f.p);
 		if (state->f.p) {
-			executeCALL(state, store16_1);
+			i8080op_executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		success = state->f.p;
@@ -1280,20 +1332,20 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_5:
 		log_trace("[%04X] RST_5(%02X)", state->pc, RST_5);
-		executeCALL(state, INTERRUPT_5);
+		i8080op_executeCALL(state, INTERRUPT_5);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RP:
 		log_trace("[%04X] RP(%02X)", state->pc, RP);
 		if (!state->f.s) {
 			pcShouldIncrement = false;
-			executeRET(state);
+			i8080op_executeRET(state);
 		}
 		success = !state->f.s;
 		break;
 	case POP_PSW:
 		log_trace("[%04X] POP_PSW(%02X)", state->pc, POP_PSW);
-		store16_1 = popStack(state);
+		store16_1 = i8080op_popStack(state);
 		state->a = (store16_1 & 0xFF00) >> 8;
 		i8080op_putFlags(state, store16_1 & 0xFF);
 		break;
@@ -1301,7 +1353,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JP(%02X) %04X (%02X %02X) : %i", state->pc, JP, store16_1, byte1, byte2, !state->f.s);
 		if (!state->f.s) {
-			setPC(state, store16_1); // Set the pc to jmpPos
+			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
@@ -1313,14 +1365,14 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CP(%02X) %04X (%02X %02X) : %i", state->pc, CP, store16_1, byte1, byte2, !state->f.s);
 		if (!state->f.s) {
-			executeCALL(state, store16_1);
+			i8080op_executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		success = !state->f.s;
 		break;
 	case PUSH_PSW:
 		log_trace("[%04X] PUSH_PSW(%02X) %04X", state->pc, PUSH_PSW, i8080op_getPSW(state));
-		pushStack(state, i8080op_getPSW(state));
+		i8080op_pushStack(state, i8080op_getPSW(state));
 		break;
 	case ORI:
 		log_trace("[%04X] ORI(%02X) %02X", state->pc, ORI, byte1);
@@ -1328,26 +1380,26 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		i8080op_setZSPAC(state, state->a);
 	case RST_6:
 		log_trace("[%04X] RST_6(%02X)", state->pc, RST_6);
-		executeCALL(state, INTERRUPT_6);
+		i8080op_executeCALL(state, INTERRUPT_6);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	case RM:
 		log_trace("[%04X] RM(%02X)", state->pc, RM);
 		if (state->f.s) {
 			pcShouldIncrement = false;
-			executeRET(state);
+			i8080op_executeRET(state);
 		}
 		success = state->f.s;
 		break;
 	case SPHL:
 		log_trace("[%04X] SPHL(%02X)", state->pc, SPHL);
-		setSP(state, i8080op_getHL(state));
+		i8080op_setSP(state, i8080op_getHL(state));
 		break;
 	case JM:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JM(%02X) %04X (%02X %02X) : %i", state->pc, JM, store16_1, byte1, byte2, state->f.s);
 		if (state->f.s) {
-			setPC(state, store16_1); // Set the pc to jmpPos
+			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		break;
@@ -1359,7 +1411,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
 		log_trace("[%04X] CM(%02X) %04X (%02X %02X) : %i", state->pc, CM, store16_1, byte1, byte2, state->f.s);
 		if (state->f.s) {
-			executeCALL(state, store16_1);
+			i8080op_executeCALL(state, store16_1);
 			pcShouldIncrement = false; // Stop the auto increment
 		}
 		success = state->f.s;
@@ -1371,11 +1423,11 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RST_7:
 		log_trace("[%04X] RST_7(%02X)", state->pc, RST_7);
-		executeCALL(state, INTERRUPT_7);
+		i8080op_executeCALL(state, INTERRUPT_7);
 		pcShouldIncrement = false; // Stop the auto increment
 		break;
 	default:
-		unimplementedOpcode(opcode);
+		unimplementedOpcode(state, opcode);
 		break;
 	}
 
@@ -1387,8 +1439,9 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	return success;
 }
 
-void unimplementedOpcode(uint8_t opcode) {
-	//log_warn("Unimplemented opcode %02X", opcode);
+void unimplementedOpcode(i8080State* state, uint8_t opcode) {
+	log_warn("Unimplemented opcode %02X, i8080 PANIC!", opcode);
+	i8080_panic(state);
 }
 
 uint16_t i8080op_getPSW(i8080State* state) {
