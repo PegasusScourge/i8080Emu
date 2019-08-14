@@ -261,7 +261,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	sfText_setString(renderText, "Instruction:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	_itoa(opcode, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
-	sfText_setString(renderText, "Status word:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	sfText_setString(renderText, "Status string:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	sfText_setString(renderText, i8080_decompile(opcode)); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	sfText_setString(renderText, "Byte1:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
