@@ -2,13 +2,13 @@
 
 i8080_test.c
 
-Test protocol
+Test protocol function. Massive single opcode test for each opcode
 
 */
 
 #include "i8080_test.h"
 
-void utilTest() {
+void i8080_testProtocol() {
 	i8080State* state = malloc(sizeof(i8080State));
 
 	if (state == NULL) {

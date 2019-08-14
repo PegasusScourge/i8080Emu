@@ -29,11 +29,15 @@ void cpuTick(i8080State* state) {
 			state->waitCycles = 0;
 		}
 	}
+
+	state->cyclesExecuted++;
 }
 
 uint8_t readMemory(i8080State* state, uint16_t index) {
 	// The bounds checking function raises any necessary flags in case of error
 	if (boundsCheckMemIndex(state, index)) {
+		if (index > 0x3fff)
+			index -= 0x4000;
 		return state->memory[index];
 	}
 	log_error("Attempted to read memory location %i (out of bounds)", index);
@@ -43,6 +47,8 @@ uint8_t readMemory(i8080State* state, uint16_t index) {
 void writeMemory(i8080State* state, uint16_t index, uint8_t val) {
 	// The bounds checking function raises any necessary flags in case of error
 	if (boundsCheckMemIndex(state, index)) {
+		if (index > 0x3fff)
+			index -= 0x4000;
 		state->memory[index] = val;
 	}
 	else {
@@ -85,27 +91,22 @@ uint16_t popStack(i8080State* state) {
 }
 
 uint8_t port_in(i8080State* state, uint8_t port) {
-	uint8_t operation = state->c;
 
-	log_info("[%04X] IN(%02X) operation==%i", state->pc, IN, operation);
+	//log_info("[%04X] IN(%02X) port==%i", state->pc, IN, port);
 
-	// print a character stored in E
-	if (operation == 2) {
-		log_info("%c", state->e);
+	if (port == 1) {
+		return 0x01;
 	}
-	// print from memory at (DE) until '$' char
-	else if (operation == 9) {
-		uint16_t addr = (state->d << 8) | state->e;
-		do {
-			log_info("%c", readMemory(state, addr++));
-		} while (readMemory(state, addr) != '$');
+	else if (port == 2) {
+		return 0x00;
 	}
 
-	return 0xFF;
+	// If we don't understand, just return 0
+	return 0x00;
 }
 
 void port_out(i8080State* state, uint8_t port, uint8_t value) {
-	// do nothing
+	//log_info("[%04X] OUT(%02X) port==%i w/val %i", state->pc, OUT, port, value);
 }
 
 void executeRET(i8080State* state) {
@@ -1378,5 +1379,5 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 }
 
 void unimplementedOpcode(uint8_t opcode) {
-	log_warn("Unimplemented opcode %02X", opcode);
+	//log_warn("Unimplemented opcode %02X", opcode);
 }

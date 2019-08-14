@@ -119,6 +119,8 @@ void reset8080(i8080State* state) {
 	state->vid.startAddress = 0;
 	state->vid.height = 64;
 	state->vid.width = 64;
+
+	state->cyclesExecuted = 0;
 }
 
 int getConsoleLine(char* buf, int bufLen) {

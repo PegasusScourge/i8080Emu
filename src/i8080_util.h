@@ -83,6 +83,7 @@ typedef struct i8080State {
 	int waitCycles;
 	struct flagRegister f;
 	struct videoMemoryInfo vid;
+	unsigned long cyclesExecuted;
 } i8080State;
 
 enum i8080Opcode {
