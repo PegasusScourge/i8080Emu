@@ -164,6 +164,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 
 	switch (opcode) {
 	case NOP: // Do nothing
+		log_trace("[%04X] NOP(%02X)", state->pc, NOP);
 		break;
 	case LXI_B: // put in BC D16
 		log_trace("[%04X] LXI_B(%02X) B:%02X C:%02X", state->pc, LXI_SP, byte2, byte1);
@@ -321,7 +322,12 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case DAA:
 		// Special, throw a warning but NOP
-		log_warn("[%04X] DAA(%02X) Special code: not implemented", state->pc, DAA);
+		log_trace("[%04X] DAA(%02X)", state->pc, DAA);
+		if ((state->a & 0xF) > 0x9 || state->f.ac == 1)
+			state->a = state->a + 6;
+		state->f.ac = shouldACFlag(state->a);
+		if ((state->a & 0xF0) >> 8 > 0x9 || state->f.c == 1)
+			state->a = addCarry(state, state->a, 0x60);
 		break;
 	case DAD_H: // HL += HL
 		log_trace("[%04X] DAD_H(%02X) %04X", state->pc, DAD_H, getHL(state));

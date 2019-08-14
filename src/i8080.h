@@ -13,7 +13,7 @@ CPU file
 // Process one cpu cycle of time length state->clockFreqMHz
 void cpuTick(i8080State* state);
 
-// Executes an opcode and changes the state accordingly
+// Executes an opcode and changes the state accordingly. Massive switch statement function
 bool executeOpcode(i8080State* state, uint8_t opcode);
 
 // Outputs to the log that we have an unimplemented opcode
