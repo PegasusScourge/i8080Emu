@@ -48,3 +48,51 @@ void executeCALL(i8080State* state, uint16_t address);
 
 // Causes the processor to execute a call, but does not increment the value pushed to the stack making sure no instructions are lost
 void executeInterrupt(i8080State* state, uint16_t address);
+
+// Returns the PSW
+uint16_t i8080op_getPSW(i8080State* state);
+
+// returns the 16 bit register BC
+uint16_t i8080op_getBC(i8080State* state);
+
+// returns the 16 bit register DE
+uint16_t i8080op_getDE(i8080State* state);
+
+// returns the 16 bit register HL
+uint16_t i8080op_getHL(i8080State* state);
+
+// Puts a value into BC
+void i8080op_putBC8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void i8080op_putBC16(i8080State* state, uint16_t);
+
+// Puts a value into DE
+void i8080op_putDE8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void i8080op_putDE16(i8080State* state, uint16_t);
+
+// Puts a value into HL
+void i8080op_putHL8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void i8080op_i8080op_putHL16(i8080State* state, uint16_t);
+
+// Sets the Z, S, P, AC flags accordingly
+void i8080op_setZSPAC(i8080State* state, uint8_t v);
+
+// Uses an 8 bit var to reconstruct the flags
+void i8080op_putFlags(i8080State* state, uint8_t fv);
+
+// Rotates the number left one bit and stores the dropped bit in bit 0 and the carry flag
+uint8_t i8080op_rotateBitwiseLeft(i8080State* state, uint8_t v);
+
+// Rotates the number right one bit and stores the dropped bit in bit 7 and the carry flag
+uint8_t i8080op_rotateBitwiseRight(i8080State* state, uint8_t v);
+
+// Adds two 16 bit numbers and sets the carry flag as appropriate
+uint16_t i8080op_addCarry16(i8080State* state, uint16_t a, uint16_t b);
+
+// Adds two 8 bit numbers and sets the carry flag as needed
+uint8_t i8080op_addCarry8(i8080State* state, uint8_t a, uint8_t b);
+
+// Subtracts two 16 bit numbers and sets the carry flag as appropriate
+uint16_t i8080op_subCarry16(i8080State* state, uint16_t a, uint16_t b);
+
+// Subtracts two 8 bit numbers and sets the carry flag as appropriate
+uint8_t i8080op_subCarry8(i8080State* state, uint8_t a, uint8_t b);

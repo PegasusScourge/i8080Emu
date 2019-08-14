@@ -23,25 +23,25 @@ void i8080_testProtocol(i8080State* state) {
 
 	fprintf(testLog, "--- function tests ---\n");
 
-	success = isZero(0);
+	success = i8080_isZero(0);
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test isZero(0x00)=%i\t\t\t\t\t: [%s]\n", isZero(0), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080_isZero(0x00)=%i\t\t\t\t\t: [%s]\n", i8080_isZero(0), success ? "OK" : "FAIL");
 
-	success = !isZero(1);
+	success = !i8080_isZero(1);
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test isZero(0x01)=%i\t\t\t\t\t: [%s]\n", isZero(1), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080_isZero(0x01)=%i\t\t\t\t\t: [%s]\n", i8080_isZero(1), success ? "OK" : "FAIL");
 
-	success = isNegative(0xFF);
+	success = i8080_isNegative(0xFF);
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test isNegative(0xFF)=%i\t\t\t\t: [%s]\n", isNegative(0xFF), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080_isNegative(0xFF)=%i\t\t\t\t: [%s]\n", i8080_isNegative(0xFF), success ? "OK" : "FAIL");
 
-	success = isParityEven(0xFF);
+	success = i8080_isParityEven(0xFF);
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test isParityEven(0xFF)=%i\t\t\t: [%s]\n", isParityEven(0xFF), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080_isParityEven(0xFF)=%i\t\t\t: [%s]\n", i8080_isParityEven(0xFF), success ? "OK" : "FAIL");
 
-	success = !isParityEven(0xFE);
+	success = !i8080_isParityEven(0xFE);
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test isParityEven(0xFE)=%i\t\t\t: [%s]\n", isParityEven(0xFE), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080_isParityEven(0xFE)=%i\t\t\t: [%s]\n", i8080_isParityEven(0xFE), success ? "OK" : "FAIL");
 
 	i8080op_addCarry16(state, 0xFFFF, 0x0001);
 	success = state->f.c;

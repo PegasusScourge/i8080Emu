@@ -345,7 +345,7 @@ void loadFile(const char* file, unsigned char* buffer, int bufferSize, int offse
 void reset8080(i8080State* state);
 
 // Checks the state and exits if it is incorrect
-void stateCheck(i8080State* state);
+void i8080_stateCheck(i8080State* state);
 
 // Init the 8080
 void init8080(i8080State* state);
@@ -354,79 +354,31 @@ void init8080(i8080State* state);
 int getConsoleLine(char* buf, int bufLen);
 
 // Checks if a memory index is in range of the memory buffer
-bool boundsCheckMemIndex(i8080State* state, int index);
+bool i8080_boundsCheckMemIndex(i8080State* state, int index);
 
 // Returns the number of bytes the instruction occupies (including the opcode)
-uint8_t getInstructionLength(uint8_t opcode);
+uint8_t i8080_getInstructionLength(uint8_t opcode);
 
 // Returns the number of clock cycles an instruction takes
-uint8_t getInstructionClockCycles(uint8_t opcode);
+uint8_t i8080_getInstructionClockCycles(uint8_t opcode);
 
 // Returns the number of clock cycles an instruction takes if it fails
-uint8_t getFailedInstructionClockCycles(uint8_t opcode);
+uint8_t i8080_getFailedInstructionClockCycles(uint8_t opcode);
 
 // Returns if the parity of a number is even
-bool isParityEven(uint16_t n);
+bool i8080_isParityEven(uint16_t n);
 
 // Returns if the number is zero
-bool isZero(uint16_t n);
+bool i8080_isZero(uint16_t n);
 
 // Returns if the number is negative
-bool isNegative(int16_t n);
+bool i8080_isNegative(int16_t n);
 
 // Returns if the ac flag should be set
-bool shouldACFlag(uint8_t n);
+bool i8080_shouldACFlag(uint8_t n);
 
 // Takes a 16bit value and converts to binary
-char* i8080op_decToBin(uint16_t n);
-
-// Returns the PSW
-uint16_t i8080op_getPSW(i8080State* state);
-
-// returns the 16 bit register BC
-uint16_t i8080op_getBC(i8080State* state);
-
-// returns the 16 bit register DE
-uint16_t i8080op_getDE(i8080State* state);
-
-// returns the 16 bit register HL
-uint16_t i8080op_getHL(i8080State* state);
-
-// Puts a value into BC
-void i8080op_putBC8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
-void i8080op_putBC16(i8080State* state, uint16_t);
-
-// Puts a value into DE
-void i8080op_putDE8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
-void i8080op_putDE16(i8080State* state, uint16_t);
-
-// Puts a value into HL
-void i8080op_putHL8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
-void i8080op_i8080op_putHL16(i8080State* state, uint16_t);
-
-// Sets the Z, S, P, AC flags accordingly
-void i8080op_setZSPAC(i8080State* state, uint8_t v);
-
-// Uses an 8 bit var to reconstruct the flags
-void i8080op_putFlags(i8080State* state, uint8_t fv);
-
-// Rotates the number left one bit and stores the dropped bit in bit 0 and the carry flag
-uint8_t i8080op_rotateBitwiseLeft(i8080State* state, uint8_t v);
-
-// Rotates the number right one bit and stores the dropped bit in bit 7 and the carry flag
-uint8_t i8080op_rotateBitwiseRight(i8080State* state, uint8_t v);
-
-// Adds two 16 bit numbers and sets the carry flag as appropriate
-uint16_t i8080op_addCarry16(i8080State* state, uint16_t a, uint16_t b);
-
-// Adds two 8 bit numbers and sets the carry flag as needed
-uint8_t i8080op_addCarry8(i8080State* state, uint8_t a, uint8_t b);
-
-// Subtracts two 16 bit numbers and sets the carry flag as appropriate
-uint16_t i8080op_subCarry16(i8080State* state, uint16_t a, uint16_t b);
-
-// Subtracts two 8 bit numbers and sets the carry flag as appropriate
-uint8_t i8080op_subCarry8(i8080State* state, uint8_t a, uint8_t b);
+char* i8080_decToBin(uint16_t n);
 
 // Fills the buffer with the mneumonic for the opcode
 const char* i8080_decompile(uint8_t opcode);

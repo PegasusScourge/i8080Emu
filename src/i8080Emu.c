@@ -220,7 +220,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	_itoa(state->sp, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	sfText_setString(renderText, "psw:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	sfText_setString(renderText, i8080op_decToBin(i8080op_getPSW(state))); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+	sfText_setString(renderText, i8080_decToBin(i8080op_getPSW(state))); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 	sfText_setString(renderText, "[accumu]SZ0A0P1C"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	pos.y += incY;
@@ -251,7 +251,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	_itoa(readMemory(state, state->pc), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	sfText_setString(renderText, "instr len:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
-	_itoa(getInstructionLength(readMemory(state, state->pc)), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+	_itoa(i8080_getInstructionLength(readMemory(state, state->pc)), buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 	pos.y += incY;
 	sfText_setString(renderText, "Video Memory Loc:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
@@ -268,7 +268,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	sfText_setString(renderText, "Memory snippet:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 	// Display the memory content surrounding our current pc
 	for (int i = state->pc - 10; i < state->pc + 10; i++) {
-		if (boundsCheckMemIndex(state, i)) {
+		if (i8080_boundsCheckMemIndex(state, i)) {
 			if (i == state->pc) {
 				sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the current PC in red
 			}
@@ -289,7 +289,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	sfText_setString(renderText, "Stack:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 	// Display the stack
 	for (int i = state->sp - 2; i < state->sp + 20; i+=2) {
-		if (boundsCheckMemIndex(state, i)) {
+		if (i8080_boundsCheckMemIndex(state, i)) {
 			if (i == state->sp) {
 				sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the top of the stack in red
 			}
@@ -508,7 +508,7 @@ void processSwitches(i8080State* state, int argc, char** argv) {
 			printf("Enter the memory index this should be loaded into:\n> ");
 			gotChars = getConsoleLine(&memIndexBuff, 20);
 			int memIndex = strtol(&memIndexBuff, NULL, 10);
-			if (boundsCheckMemIndex(&state, memIndex)) {
+			if (i8080_boundsCheckMemIndex(&state, memIndex)) {
 				// We are in range, load the rom
 				loadFile(&consoleBuff, state->memory, i8080_MEMORY_SIZE, memIndex);
 				printf("Loaded ROM\n");

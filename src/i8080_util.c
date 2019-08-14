@@ -69,7 +69,7 @@ void loadFile(const char* file, unsigned char* buffer, int bufferSize, int offse
 	fclose(f);
 }
 
-void stateCheck(i8080State* state) {
+void i8080_stateCheck(i8080State* state) {
 	if (state == NULL) {
 		log_fatal("NULL state");
 		exit(-1);
@@ -93,7 +93,7 @@ void init8080(i8080State* state) {
 }
 
 void reset8080(i8080State* state) {
-	stateCheck(state);
+	i8080_stateCheck(state);
 
 	// Iterate the memory and clear it
 	for (int i = 0; i < i8080_MEMORY_SIZE; i++) {
@@ -149,8 +149,8 @@ int getConsoleLine(char* buf, int bufLen) {
 	return i; // Return the length of the string got (0th char can techincally be the null character we just appended)
 }
 
-bool boundsCheckMemIndex(i8080State* state, int index) {
-	stateCheck(state);
+bool i8080_boundsCheckMemIndex(i8080State* state, int index) {
+	i8080_stateCheck(state);
 	if (index < 0) {
 		// Underflow
 		return false;
@@ -162,28 +162,28 @@ bool boundsCheckMemIndex(i8080State* state, int index) {
 	return true;
 }
 
-uint8_t getInstructionLength(uint8_t opcode) {
+uint8_t i8080_getInstructionLength(uint8_t opcode) {
 	if (opcode >= 0x00 && opcode < 0x100) {
 		return instructionParams[opcode][PARAMS_BYTE_LEN];
 	}
 	return 1;
 }
 
-uint8_t getInstructionClockCycles(uint8_t opcode) {
+uint8_t i8080_getInstructionClockCycles(uint8_t opcode) {
 	if (opcode >= 0x00 && opcode < 0x100) {
 		return instructionParams[opcode][PARAMS_CLOCK_LEN];
 	}
 	return 1;
 }
 
-uint8_t getFailedInstructionClockCycles(uint8_t opcode) {
+uint8_t i8080_getFailedInstructionClockCycles(uint8_t opcode) {
 	if (opcode >= 0x00 && opcode < 0x100) {
 		return instructionParams[opcode][PARAMS_FCLOCK_LEN];
 	}
 	return 0;
 }
 
-bool isParityEven(uint16_t n) {
+bool i8080_isParityEven(uint16_t n) {
 	int numOneBits = 0;
 	for (int i = 0; i < 16; i++) {
 		uint16_t v = (n >> i) & 0b0000000000000001;
@@ -193,20 +193,20 @@ bool isParityEven(uint16_t n) {
 	return numOneBits % 2 == 0; // If even, return true
 }
 
-bool isZero(uint16_t n) {
+bool i8080_isZero(uint16_t n) {
 	return n == 0;
 }
 
-bool isNegative(int16_t n) {
+bool i8080_isNegative(int16_t n) {
 	return (0x80 == (n & 0x80));
 }
 
-bool shouldACFlag(uint8_t n) {
+bool i8080_shouldACFlag(uint8_t n) {
 	// Other possible implementation: ((c->a | val) & 0x08) != 0;
 	return (n & 0xF) == 0;
 }
 
-char* i8080op_decToBin(uint16_t n) {
+char* i8080_decToBin(uint16_t n) {
 	int c, d, count;
 	char* pointer;
 
@@ -229,111 +229,4 @@ char* i8080op_decToBin(uint16_t n) {
 	*(pointer + count) = '\0';
 
 	return  pointer;
-}
-
-uint16_t i8080op_getPSW(i8080State* state) {
-	uint16_t res = 0;
-	res += state->a << 8;
-	res += state->f.s << 7;
-	res += state->f.z << 6;
-	res += state->f.zero << 5;
-	res += state->f.ac << 4;
-	res += state->f.zero << 3;
-	res += state->f.p << 2;
-	res += state->f.one << 1;
-	return res;
-}
-
-uint16_t i8080op_getBC(i8080State* state) {
-	return ((uint16_t)state->b << 8) + state->c;
-}
-
-uint16_t i8080op_getDE(i8080State* state) {
-	return ((uint16_t)state->d << 8) + state->e;
-}
-
-uint16_t i8080op_getHL(i8080State* state) {
-	return ((uint16_t)state->h << 8) + state->l;
-}
-
-void i8080op_putBC8(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
-	state->b = ubyte;
-	state->c = lbyte;
-}
-void i8080op_putBC16(i8080State* state, uint16_t b) {
-	state->b = b >> 8;
-	state->c = b & 0xFF;
-}
-
-void i8080op_putDE8(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
-	state->d = ubyte;
-	state->e = lbyte;
-}
-void i8080op_putDE16(i8080State* state, uint16_t b) {
-	state->d = b >> 8;
-	state->e = b & 0xFF;
-}
-
-void i8080op_putHL8(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
-	state->h = ubyte;
-	state->l = lbyte;
-}
-void i8080op_i8080op_putHL16(i8080State* state, uint16_t b) {
-	state->h = b >> 8;
-	state->l = b & 0xFF;
-}
-
-void i8080op_setZSPAC(i8080State* state, uint8_t v) {
-	state->f.z = isZero(v);
-	state->f.s = isNegative(v);
-	state->f.p = isParityEven(v);
-	state->f.ac = shouldACFlag(v);
-}
-
-void i8080op_putFlags(i8080State* state, uint8_t fv) {
-	state->f.s = (fv & 0x80) >> 7;
-	state->f.z = (fv & 0x40) >> 6;
-	state->f.ac = (fv & 0x10) >> 4;
-	state->f.p = (fv & 0x04) >> 2;
-	state->f.c = (fv & 0x01);
-}
-
-uint8_t i8080op_rotateBitwiseLeft(i8080State* state, uint8_t v) {
-	uint8_t store8_1 = (v >> 7); // Get the 7th bit
-	state->f.c = store8_1; // Store it in the carry flag
-	return (v << 1) | store8_1; // Store the 0th bit in position
-}
-
-uint8_t i8080op_rotateBitwiseRight(i8080State* state, uint8_t v) {
-	uint8_t store8_1 = v & 0x01; // Get the 0th bit
-	state->f.c = store8_1; // Store it in the carry flag
-	return (v >> 1) | (store8_1 << 7); // Store the 7th bit in position
-}
-
-uint16_t i8080op_addCarry16(i8080State* state, uint16_t a, uint16_t b) {
-	uint32_t store32_1 = (uint32_t)a + (uint32_t)b;
-	state->f.c = (store32_1 & 0xFFFF0000) >> 16;
-	//log_debug("carry:%i, val:%08X", state->f.c, store32_1);
-	return store32_1 & 0xFFFF;
-}
-
-uint16_t i8080op_subCarry16(i8080State* state, uint16_t a, uint16_t b) {
-	state->f.c = a < b;
-	uint16_t store16_1 = a + ~b + state->f.c;
-	log_debug("sub carry:%i, val:%08X", state->f.c, store16_1);
-	return store16_1;
-}
-
-uint8_t i8080op_addCarry8(i8080State* state, uint8_t a, uint8_t b) {
-	uint16_t store16_1 = (uint16_t)a + (uint16_t)b;
-	state->f.c = (store16_1 & 0xFF00) >> 8;
-	//log_debug("carry:%i, val:%08X", state->f.c, store32_1);
-	return store16_1 & 0xFF;
-}
-
-uint8_t i8080op_subCarry8(i8080State* state, uint8_t a, uint8_t b) {
-	state->f.c = a < b;
-	uint8_t store8_1 = a + ~b + state->f.c;
-	log_debug("sub carry:%i, val:%08X", state->f.c, store8_1);
-	return store8_1;
 }
