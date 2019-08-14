@@ -55,7 +55,7 @@ void i8080_cpuTick(i8080State* state) {
 
 void i8080_panic(i8080State* state) {
 	log_fatal("i8080 PANIC has occured, cycle %ul", state->cyclesExecuted);
-	state->mode = MODE_HLT; // set invalid
+	state->mode = MODE_PANIC; // set invalid
 
 	i8080_dump(state);
 }
@@ -70,8 +70,9 @@ void i8080_dump(i8080State* state) {
 
 	fprintf(dumpFile, "Registers:\nB:%02X C:%02X\nD:%02X E:%02X\nH:%02X L:%02X\nPSW:%04X (%s)\n", state->b, state->c, state->d, state->e, state->h, state->l, i8080op_getPSW(state), i8080_decToBin(i8080op_getPSW(state)));
 	fprintf(dumpFile, "PC: %04X\nSP: %04X\n", state->pc, state->sp);
-	fprintf(dumpFile, "------\nInstruction trace (newest instruction first):\n");
+	fprintf(dumpFile, "Interrupts enabled: %i\nInterrupt: %04X\n\n", state->f.ien, state->f.isi);
 
+	fprintf(dumpFile, "------\nInstruction trace (newest instruction first):\n");
 	// Print the last instructions
 	for (int i = 0; i < INSTRUCTION_TRACE_LEN; i++) {
 		fprintf(dumpFile, "{-%i}[%ul][PC:%04X] %s(%02X) (PSW:%04X, %s)(TS:%04X) B1:%02X B2:%02X\n", i, state->previousInstructions[i].cycleNum, state->previousInstructions[i].pc, state->previousInstructions[i].statusString, state->previousInstructions[i].opcode, state->previousInstructions[i].psw, i8080_decToBin(state->previousInstructions[i].psw), state->previousInstructions[i].topStack, state->previousInstructions[i].b1, state->previousInstructions[i].b2);
@@ -208,9 +209,8 @@ void i8080op_executeCALL(i8080State* state, uint16_t address) {
 }
 
 void i8080op_executeInterrupt(i8080State* state, uint16_t address) {
-	//breakpoint(state); // pause here to inspect state
-
 	if (state->f.isi == 0 && state->f.ien) {
+		breakpoint(state); // pause here to inspect state
 		log_trace("--- INTERRUPT %i ---", address);
 		state->f.isi = address; // set isInterrupted bit
 		i8080op_pushStack(state, state->pc);

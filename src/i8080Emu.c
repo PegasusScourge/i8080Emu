@@ -34,6 +34,8 @@ void renderStateInfo(i8080State* state, float frameTimeMillis);
 void updateVideoBuffer(i8080State* state, sfImage* img);
 // Process the switches in the program args
 void processSwitches(i8080State* state, int argc, char** argv);
+// Check for interrupts
+void checkInterrupts(i8080State* state);
 
 // var defs
 sfRenderWindow* window = NULL; // window handle
@@ -44,6 +46,10 @@ sfImage* videoImg = NULL;
 
 bool shouldClose = false;
 bool showStats = false;
+
+// Interrupt vars
+int frame_interrupFreq = 17066;
+bool frameInterruptFlag = false;
 
 #define TEXT_SIZE 14
 
@@ -92,8 +98,6 @@ int main(int argc, char** argv) {
 	// Timing variables
 	float elapsedTime = 0;
 	float cycle_accumulator = 0;
-	int frame_interrupFreq = 4839;
-	bool frameInterruptFlag = false;
 
 	log_info("Initial pc: %04X", state.pc);
 	state.mode = MODE_PAUSED;
@@ -113,28 +117,23 @@ int main(int argc, char** argv) {
 		cycle_accumulator += elapsedTime;
 
 		unsigned long cyclesPerFrame = state.clockFreqMHz * MHZ * (elapsedTime / 1000.0f);
-		//log_info("cyclesPerFrame: %i", cyclesPerFrame);
+		
+		// Loop only if we are in normal mode
 		while (cyclesPerFrame > 0 && state.mode == MODE_NORMAL) {
 			i8080_cpuTick(&state);
+			checkInterrupts(&state);
 			cyclesPerFrame--;
 		}
-
-		if (state.cyclesExecuted % frame_interrupFreq == 0 && state.mode != MODE_HLT) {
-			// Trigger CPU interrupt
-			//log_trace("-- VBlank interrupt");
-			if (frameInterruptFlag) {
-				i8080op_executeInterrupt(&state, INTERRUPT_1);
-			}
-			else {
-				i8080op_executeInterrupt(&state, INTERRUPT_2);
-			}
-			frameInterruptFlag = !frameInterruptFlag;
-		}
-
+		
+		checkInterrupts(&state);
+		
 		// Update the video buffer
 		updateVideoBuffer(&state, videoImg);
 
-		sfRenderWindow_clear(window, sfColor_fromRGB(0, 0, 100));
+		if(state.mode != MODE_PANIC)
+			sfRenderWindow_clear(window, sfColor_fromRGB(0, 0, 100));
+		else
+			sfRenderWindow_clear(window, sfColor_fromRGB(100, 10, 10));
 
 		// Render the video buffer
 		sfTexture* videoTexture = sfTexture_createFromImage(videoImg, NULL);
@@ -180,6 +179,21 @@ int main(int argc, char** argv) {
 	fclose(logFile);
 
 	return 0;
+}
+
+void checkInterrupts(i8080State* state) {
+	// Only allow interrupts if we aren't halted or panicked 
+	if (state->cyclesExecuted % frame_interrupFreq == 0 && state->mode != MODE_HLT && state->mode != MODE_PANIC) {
+		// Trigger CPU interrupt
+		//log_trace("-- VBlank interrupt");
+		if (frameInterruptFlag) {
+			i8080op_executeInterrupt(state, INTERRUPT_1);
+		}
+		else {
+			i8080op_executeInterrupt(state, INTERRUPT_2);
+		}
+		frameInterruptFlag = !frameInterruptFlag;
+	}
 }
 
 void renderStateInfo(i8080State* state, float frameTimeMillis) {
@@ -258,6 +272,9 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 
 		sfText_setString(renderText, "Clock frequency (MHz):"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 		_gcvt(state->clockFreqMHz, 8, buf); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+		
+		sfText_setString(renderText, "Cycles executed:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_ultoa(state->cyclesExecuted, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
 		pos.y += incY;
 		uint8_t opcode = i8080op_readMemory(state, state->pc);

@@ -283,6 +283,8 @@ const char* getModeStr(int mode) {
 		return "NORMAL"; break;
 	case MODE_PAUSED:
 		return "PAUSED"; break;
+	case MODE_PANIC:
+		return "PANIC"; break;
 	}
 	return "unknown";
 }
@@ -320,7 +322,7 @@ void loadFile(const char* file, unsigned char* buffer, int bufferSize, int offse
 }
 
 void breakpoint(i8080State* state) {
-	if (state->mode == MODE_HLT)
+	if (state->mode != MODE_NORMAL)
 		return;
 	state->mode = MODE_PAUSED;
 	log_warn("BREAKPOINT TRIGGERED");

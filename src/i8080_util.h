@@ -105,7 +105,8 @@ typedef struct i8080State {
 enum i8080Mode {
 	MODE_NORMAL,
 	MODE_PAUSED,
-	MODE_HLT
+	MODE_HLT,
+	MODE_PANIC
 };
 
 enum i8080Opcode {
