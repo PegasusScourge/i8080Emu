@@ -139,6 +139,22 @@ int main(int argc, char** argv) {
 		sfRenderWindow_display(window);
 	}
 
+	// Output the opcodes that were used by the program
+	FILE* fp = fopen("i8080_opcodeUse.log", "w");
+	if (fp == NULL) {
+		log_error("Unable to output opcodeUse table: failed to get file handle");
+	}
+	else {
+		fprintf(fp, "Opcode use table\n------------------------------------------\n");
+		for (int i = 0; i < 0x100; i++) {
+			if (state.opcodeUse[i]) {
+				fprintf(fp, "%02X\n", i);
+			}
+		}
+		fprintf(fp, "------------------------------------------\n");
+		fclose(fp);
+	}
+
 	// Destroy the timer
 	sfClock_destroy(timer);
 

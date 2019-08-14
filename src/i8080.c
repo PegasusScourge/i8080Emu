@@ -14,6 +14,9 @@ void cpuTick(i8080State* state) {
 		// We don't need to wait cycles
 		uint8_t opcode = readMemory(state, state->pc);
 
+		// Set the opcode as being used
+		state->opcodeUse[opcode] = 1;
+
 		// Get the result of the opcode execution to determine the number of clock cycles we need to take
 		bool success = executeOpcode(state, opcode);
 
