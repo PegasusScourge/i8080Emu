@@ -377,52 +377,52 @@ bool isNegative(int16_t n);
 bool shouldACFlag(uint8_t n);
 
 // Takes a 16bit value and converts to binary
-char* decimal_to_binary(uint16_t n);
+char* i8080op_decToBin(uint16_t n);
 
 // Returns the PSW
-uint16_t getPSW(i8080State* state);
+uint16_t i8080op_getPSW(i8080State* state);
 
 // returns the 16 bit register BC
-uint16_t getBC(i8080State* state);
+uint16_t i8080op_getBC(i8080State* state);
 
 // returns the 16 bit register DE
-uint16_t getDE(i8080State* state);
+uint16_t i8080op_getDE(i8080State* state);
 
 // returns the 16 bit register HL
-uint16_t getHL(i8080State* state);
+uint16_t i8080op_getHL(i8080State* state);
 
 // Puts a value into BC
-void putBC(i8080State* state, uint8_t ubyte, uint8_t lbyte);
-void putBC16(i8080State* state, uint16_t);
+void i8080op_putBC8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void i8080op_putBC16(i8080State* state, uint16_t);
 
 // Puts a value into DE
-void putDE(i8080State* state, uint8_t ubyte, uint8_t lbyte);
-void putDE16(i8080State* state, uint16_t);
+void i8080op_putDE8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void i8080op_putDE16(i8080State* state, uint16_t);
 
 // Puts a value into HL
-void putHL(i8080State* state, uint8_t ubyte, uint8_t lbyte);
-void putHL16(i8080State* state, uint16_t);
+void i8080op_putHL8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
+void i8080op_i8080op_putHL16(i8080State* state, uint16_t);
 
 // Sets the Z, S, P, AC flags accordingly
-void setZSPAC(i8080State* state, uint8_t v);
+void i8080op_setZSPAC(i8080State* state, uint8_t v);
 
 // Uses an 8 bit var to reconstruct the flags
-void putFlags(i8080State* state, uint8_t fv);
+void i8080op_putFlags(i8080State* state, uint8_t fv);
 
 // Rotates the number left one bit and stores the dropped bit in bit 0 and the carry flag
-uint8_t rotateBitwiseLeft(i8080State* state, uint8_t v);
+uint8_t i8080op_rotateBitwiseLeft(i8080State* state, uint8_t v);
 
 // Rotates the number right one bit and stores the dropped bit in bit 7 and the carry flag
-uint8_t rotateBitwiseRight(i8080State* state, uint8_t v);
+uint8_t i8080op_rotateBitwiseRight(i8080State* state, uint8_t v);
 
 // Adds two 16 bit numbers and sets the carry flag as appropriate
-uint16_t addCarry16(i8080State* state, uint16_t a, uint16_t b);
+uint16_t i8080op_addCarry16(i8080State* state, uint16_t a, uint16_t b);
 
 // Adds two 8 bit numbers and sets the carry flag as needed
-uint8_t addCarry(i8080State* state, uint8_t a, uint8_t b);
+uint8_t i8080op_addCarry8(i8080State* state, uint8_t a, uint8_t b);
 
 // Subtracts two 16 bit numbers and sets the carry flag as appropriate
-uint16_t subCarry16(i8080State* state, uint16_t a, uint16_t b);
+uint16_t i8080op_subCarry16(i8080State* state, uint16_t a, uint16_t b);
 
 // Subtracts two 8 bit numbers and sets the carry flag as appropriate
-uint8_t subCarry(i8080State* state, uint8_t a, uint8_t b);
+uint8_t i8080op_subCarry8(i8080State* state, uint8_t a, uint8_t b);

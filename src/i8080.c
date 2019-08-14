@@ -168,26 +168,26 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case LXI_B: // put in BC D16
 		log_trace("[%04X] LXI_B(%02X) B:%02X C:%02X", state->pc, LXI_SP, byte2, byte1);
-		putBC(state, byte2, byte1);
+		i8080op_putBC8(state, byte2, byte1);
 		break;
 	case STAX_B: // write value of A to memory[BC]
-		log_trace("[%04X] STAX_B(%02X) BC:%04X A:%02X", state->pc, STAX_B, getBC(state), state->a);
-		writeMemory(state, getBC(state), state->a);
+		log_trace("[%04X] STAX_B(%02X) BC:%04X A:%02X", state->pc, STAX_B, i8080op_getBC(state), state->a);
+		writeMemory(state, i8080op_getBC(state), state->a);
 		break;
 	case INX_B: // Increment BC
-		store16_1 = 1 + getBC(state);
+		store16_1 = 1 + i8080op_getBC(state);
 		log_trace("[%04X] INX_B(%02X)", state->pc, INX_B);
-		putBC(state, (store16_1 & 0xFF00) >> 8, (store16_1 & 0x00FF));
+		i8080op_putBC8(state, (store16_1 & 0xFF00) >> 8, (store16_1 & 0x00FF));
 		break;
 	case INR_B: // Increment B
 		log_trace("[%04X] INR_B(%02X)", state->pc, INR_B);
 		state->b = state->b + 1;
-		setZSPAC(state, state->b);
+		i8080op_setZSPAC(state, state->b);
 		break;
 	case DCR_B: // Decrement B
 		log_trace("[%04X] DCR_B(%02X)", state->pc, DCR_B);
 		state->b = state->b - 1;
-		setZSPAC(state, state->b);
+		i8080op_setZSPAC(state, state->b);
 		break;
 	case MVI_B: // Put byte1 into B
 		log_trace("[%04X] MVI_B(%02X) %02X", state->pc, MVI_B, byte1);
@@ -195,29 +195,29 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RLC: // Bitshift and place the dropped bit in the carry flag and bit 0 of the new number
 		log_trace("[%04X] RLC(%02X) %02X", state->pc, RLC, state->a);
-		state->a = rotateBitwiseLeft(state, state->a);
+		state->a = i8080op_rotateBitwiseLeft(state, state->a);
 		break;
 	case DAD_B: // HL += BC
-		log_trace("[%04X] DAD_B(%02X) %04X", state->pc, DAD_B, getBC(state));
-		putHL16(state, addCarry16(state, getHL(state), getBC(state)));
+		log_trace("[%04X] DAD_B(%02X) %04X", state->pc, DAD_B, i8080op_getBC(state));
+		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getBC(state)));
 		break;
 	case LDAX_B: // Load memory pointed to by BC into A
-		log_trace("[%04X] LDAX_B(%02X) %02X", state->pc, LDAX_B, readMemory(state, getBC(state)));
-		state->a = readMemory(state, getBC(state));
+		log_trace("[%04X] LDAX_B(%02X) %02X", state->pc, LDAX_B, readMemory(state, i8080op_getBC(state)));
+		state->a = readMemory(state, i8080op_getBC(state));
 		break;
 	case DCX_B: // Decrement BC by 1
-		log_trace("[%04X] DCX_B(%02X) %04X", state->pc, DCX_B, getBC(state));
-		putBC16(state, getBC(state) - 1);
+		log_trace("[%04X] DCX_B(%02X) %04X", state->pc, DCX_B, i8080op_getBC(state));
+		i8080op_putBC16(state, i8080op_getBC(state) - 1);
 		break;
 	case INR_C: // Increment C by 1
 		log_trace("[%04X] INR_C(%02X) %02X", state->pc, INR_C, state->c);
 		state->c = state->c + 1;
-		setZSPAC(state, state->c);
+		i8080op_setZSPAC(state, state->c);
 		break;
 	case DCR_C: // Decrement C by 1
 		log_trace("[%04X] DCR_C(%02X) %02X", state->pc, DCR_C, state->c);
 		state->c = state->c - 1;
-		setZSPAC(state, state->c);
+		i8080op_setZSPAC(state, state->c);
 		break;
 	case MVI_C: // Put byte1 into C
 		log_trace("[%04X] MVI_C(%02X) %02X", state->pc, MVI_C, byte1);
@@ -225,29 +225,29 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case RRC: // Bitshift and place the dropped bit in the carry flag and bit 7 of the new number
 		log_trace("[%04X] RRC(%02X) %02X", state->pc, RRC, state->a);
-		state->a = rotateBitwiseRight(state, state->a);
+		state->a = i8080op_rotateBitwiseRight(state, state->a);
 		break;
 	case LXI_D: // put in DE D16
 		log_trace("[%04X] LXI_D(%02X) D:%02X E:%02X", state->pc, LXI_D, byte2, byte1);
-		putDE(state, byte2, byte1);
+		i8080op_putDE8(state, byte2, byte1);
 		break;
 	case STAX_D: // write value of A to memory[DE]
-		log_trace("[%04X] STAX_D(%02X) BC:%04X A:%02X", state->pc, STAX_D, getDE(state), state->a);
-		writeMemory(state, getDE(state), state->a);
+		log_trace("[%04X] STAX_D(%02X) BC:%04X A:%02X", state->pc, STAX_D, i8080op_getDE(state), state->a);
+		writeMemory(state, i8080op_getDE(state), state->a);
 		break;
 	case INX_D: // Increment DE
 		log_trace("[%04X] INX_D(%02X)", state->pc, INX_D);
-		putDE16(state, 1 + getDE(state));
+		i8080op_putDE16(state, 1 + i8080op_getDE(state));
 		break;
 	case INR_D: // Increment D
 		log_trace("[%04X] INR_D(%02X)", state->pc, INR_D);
 		state->d = state->d + 1;
-		setZSPAC(state, state->d);
+		i8080op_setZSPAC(state, state->d);
 		break;
 	case DCR_D: // Decrement D
 		log_trace("[%04X] DCR_D(%02X)", state->pc, DCR_D);
 		state->d = state->d - 1;
-		setZSPAC(state, state->d);
+		i8080op_setZSPAC(state, state->d);
 		break;
 	case MVI_D: // Put byte1 into D
 		log_trace("[%04X] MVI_D(%02X) %02X", state->pc, MVI_D, byte1);
@@ -260,26 +260,26 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->f.c = store8_1; // Store 7th bit the carry flag
 		break;
 	case DAD_D: // HL += DE
-		log_trace("[%04X] DAD_D(%02X) %04X", state->pc, DAD_D, getDE(state));
-		putHL16(state, addCarry16(state, getHL(state), getDE(state)));
+		log_trace("[%04X] DAD_D(%02X) %04X", state->pc, DAD_D, i8080op_getDE(state));
+		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getDE(state)));
 		break;
 	case LDAX_D: // Load memory pointed to by DE into A
-		log_trace("[%04X] LDAX_D(%02X) %02X", state->pc, LDAX_D, readMemory(state, getDE(state)));
-		state->a = readMemory(state, getDE(state));
+		log_trace("[%04X] LDAX_D(%02X) %02X", state->pc, LDAX_D, readMemory(state, i8080op_getDE(state)));
+		state->a = readMemory(state, i8080op_getDE(state));
 		break;
 	case DCX_D: // Decrement DE by 1
-		log_trace("[%04X] DCX_D(%02X) %04X", state->pc, DCX_D, getDE(state));
-		putDE16(state, getDE(state) - 1);
+		log_trace("[%04X] DCX_D(%02X) %04X", state->pc, DCX_D, i8080op_getDE(state));
+		i8080op_putDE16(state, i8080op_getDE(state) - 1);
 		break;
 	case INR_E: // Increment E by 1
 		log_trace("[%04X] INR_E(%02X) %02X", state->pc, INR_E, state->e);
 		state->e = state->e + 1;
-		setZSPAC(state, state->e);
+		i8080op_setZSPAC(state, state->e);
 		break;
 	case DCR_E: // Decrement E by 1
 		log_trace("[%04X] DCR_E(%02X) %02X", state->pc, DCR_E, state->e);
 		state->e = state->e - 1;
-		setZSPAC(state, state->e);
+		i8080op_setZSPAC(state, state->e);
 		break;
 	case MVI_E: // Put byte1 into C
 		log_trace("[%04X] MVI_E(%02X) %02X", state->pc, MVI_E, byte1);
@@ -294,27 +294,27 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case LXI_H: // put in HL D16
 		log_trace("[%04X] LXI_H(%02X) H:%02X L:%02X", state->pc, LXI_H, byte2, byte1);
-		putHL(state, byte2, byte1);
+		i8080op_putHL8(state, byte2, byte1);
 		break;
 	case SHLD: // write value of HL to memory[store16_1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
-		log_trace("[%04X] SHLD(%02X) %04X HL:%04X", state->pc, SHLD, store16_1, getHL(state));
+		log_trace("[%04X] SHLD(%02X) %04X HL:%04X", state->pc, SHLD, store16_1, i8080op_getHL(state));
 		writeMemory(state, store16_1, state->l);
 		writeMemory(state, store16_1 + 1, state->h);
 		break;
 	case INX_H: // Increment HL
 		log_trace("[%04X] INX_H(%02X)", state->pc, INX_H);
-		putHL16(state, 1 + getHL(state));
+		i8080op_i8080op_putHL16(state, 1 + i8080op_getHL(state));
 		break;
 	case INR_H: // Increment H
 		log_trace("[%04X] INR_H(%02X)", state->pc, INR_H);
 		state->h = state->h + 1;
-		setZSPAC(state, state->h);
+		i8080op_setZSPAC(state, state->h);
 		break;
 	case DCR_H: // Decrement D
 		log_trace("[%04X] DCR_H(%02X)", state->pc, DCR_H);
 		state->h = state->h - 1;
-		setZSPAC(state, state->h);
+		i8080op_setZSPAC(state, state->h);
 		break;
 	case MVI_H: // Put byte1 into H
 		log_trace("[%04X] MVI_H(%02X) %02X", state->pc, MVI_H, byte1);
@@ -327,11 +327,11 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 			state->a = state->a + 6;
 		state->f.ac = shouldACFlag(state->a);
 		if ((state->a & 0xF0) >> 8 > 0x9 || state->f.c == 1)
-			state->a = addCarry(state, state->a, 0x60);
+			state->a = i8080op_addCarry8(state, state->a, 0x60);
 		break;
 	case DAD_H: // HL += HL
-		log_trace("[%04X] DAD_H(%02X) %04X", state->pc, DAD_H, getHL(state));
-		putHL16(state, addCarry16(state, getHL(state), getHL(state)));
+		log_trace("[%04X] DAD_H(%02X) %04X", state->pc, DAD_H, i8080op_getHL(state));
+		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getHL(state)));
 		break;
 	case LHLD: // Load L with memory[store16_1] and H with memory[store16_1 + 1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
@@ -340,18 +340,18 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->h = readMemory(state, store16_1 + 1);
 		break;
 	case DCX_H: // Decrement HL by 1
-		log_trace("[%04X] DCX_H(%02X) %04X", state->pc, DCX_H, getHL(state));
-		putHL16(state, getHL(state) - 1);
+		log_trace("[%04X] DCX_H(%02X) %04X", state->pc, DCX_H, i8080op_getHL(state));
+		i8080op_i8080op_putHL16(state, i8080op_getHL(state) - 1);
 		break;
 	case INR_L: // Increment L by 1
 		log_trace("[%04X] INR_L(%02X) %02X", state->pc, INR_L, state->e);
 		state->l = state->l + 1;
-		setZSPAC(state, state->l);
+		i8080op_setZSPAC(state, state->l);
 		break;
 	case DCR_L: // Decrement L by 1
 		log_trace("[%04X] DCR_L(%02X) %02X", state->pc, DCR_L, state->e);
 		state->l = state->l - 1;
-		setZSPAC(state, state->l);
+		i8080op_setZSPAC(state, state->l);
 		break;
 	case MVI_L: // Put byte1 into L
 		log_trace("[%04X] MVI_L(%02X) %02X", state->pc, MVI_L, byte1);
@@ -376,22 +376,22 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		setSP(state, state->sp + 1);
 		break;
 	case INR_M:
-		store8_1 = readMemory(state, getHL(state));
-		log_trace("[%04X] INR_M(%02X) [%04X]%02X", state->pc, INR_M, getHL(state), store8_1);
+		store8_1 = readMemory(state, i8080op_getHL(state));
+		log_trace("[%04X] INR_M(%02X) [%04X]%02X", state->pc, INR_M, i8080op_getHL(state), store8_1);
 		store8_1 += 1;
-		setZSPAC(state, store8_1);
-		writeMemory(state, getHL(state), store8_1);
+		i8080op_setZSPAC(state, store8_1);
+		writeMemory(state, i8080op_getHL(state), store8_1);
 		break;
 	case DCR_M:
-		store8_1 = readMemory(state, getHL(state));
-		log_trace("[%04X] DCR_M(%02X) [%04X]%02X", state->pc, DCR_M, getHL(state), store8_1);
+		store8_1 = readMemory(state, i8080op_getHL(state));
+		log_trace("[%04X] DCR_M(%02X) [%04X]%02X", state->pc, DCR_M, i8080op_getHL(state), store8_1);
 		store8_1 -= 1;
-		setZSPAC(state, store8_1);
-		writeMemory(state, getHL(state), store8_1);
+		i8080op_setZSPAC(state, store8_1);
+		writeMemory(state, i8080op_getHL(state), store8_1);
 		break;
 	case MVI_M: // Put byte1 into memory[HL]
-		log_trace("[%04X] MVI_M(%02X) %02X --> [%04X]", state->pc, MVI_M, byte1, getHL(state));
-		writeMemory(state, getHL(state), byte1);
+		log_trace("[%04X] MVI_M(%02X) %02X --> [%04X]", state->pc, MVI_M, byte1, i8080op_getHL(state));
+		writeMemory(state, i8080op_getHL(state), byte1);
 		break;
 	case STC:
 		log_trace("[%04X] STC(%02X) 1", state->pc, STC);
@@ -399,7 +399,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case DAD_SP: // HL += SP
 		log_trace("[%04X] DAD_SP(%02X) %04X", state->pc, DAD_SP, state->sp);
-		putHL16(state, addCarry16(state, getHL(state), state->sp));
+		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), state->sp));
 		break;
 	case LDA: // load value of A from memory[store16_1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
@@ -413,12 +413,12 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case INR_A:
 		log_trace("[%04X] INR_A(%02X) %02X", state->pc, INR_A, state->a);
 		state->a = state->a + 1;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case DCR_A:
 		log_trace("[%04X] DCR_A(%02X) %02X", state->pc, DCR_A, state->a);
 		state->a = state->a - 1;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case MVI_A: // Put byte1 into A
 		log_trace("[%04X] MVI_A(%02X) %02X", state->pc, MVI_A, byte1);
@@ -453,8 +453,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->b = state->l;
 		break;
 	case MOV_BM:
-		log_trace("[%04X] MOV_BM(%02X) %04X", state->pc, MOV_BM, getHL(state));
-		state->b = readMemory(state, getHL(state));
+		log_trace("[%04X] MOV_BM(%02X) %04X", state->pc, MOV_BM, i8080op_getHL(state));
+		state->b = readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_BA:
 		log_trace("[%04X] MOV_BA(%02X)", state->pc, MOV_BA);
@@ -485,8 +485,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->c = state->l;
 		break;
 	case MOV_CM:
-		log_trace("[%04X] MOV_CM(%02X) %04X", state->pc, MOV_CM, getHL(state));
-		state->c = readMemory(state, getHL(state));
+		log_trace("[%04X] MOV_CM(%02X) %04X", state->pc, MOV_CM, i8080op_getHL(state));
+		state->c = readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_CA:
 		log_trace("[%04X] MOV_CA(%02X)", state->pc, MOV_CA);
@@ -517,8 +517,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->d = state->l;
 		break;
 	case MOV_DM:
-		log_trace("[%04X] MOV_DM(%02X) %04X", state->pc, MOV_DM, getHL(state));
-		state->d = readMemory(state, getHL(state));
+		log_trace("[%04X] MOV_DM(%02X) %04X", state->pc, MOV_DM, i8080op_getHL(state));
+		state->d = readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_DA:
 		log_trace("[%04X] MOV_DA(%02X)", state->pc, MOV_DA);
@@ -549,8 +549,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->e = state->l;
 		break;
 	case MOV_EM:
-		log_trace("[%04X] MOV_EM(%02X) %04X", state->pc, MOV_EM, getHL(state));
-		state->e = readMemory(state, getHL(state));
+		log_trace("[%04X] MOV_EM(%02X) %04X", state->pc, MOV_EM, i8080op_getHL(state));
+		state->e = readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_EA:
 		log_trace("[%04X] MOV_EA(%02X) (REEEEEE)", state->pc, MOV_EA);
@@ -581,8 +581,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->h = state->l;
 		break;
 	case MOV_HM:
-		log_trace("[%04X] MOV_HM(%02X) %04X", state->pc, MOV_HM, getHL(state));
-		state->h = readMemory(state, getHL(state));
+		log_trace("[%04X] MOV_HM(%02X) %04X", state->pc, MOV_HM, i8080op_getHL(state));
+		state->h = readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_HA:
 		log_trace("[%04X] MOV_HA(%02X) (HA!)", state->pc, MOV_HA);
@@ -613,8 +613,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->l = state->l;
 		break;
 	case MOV_LM:
-		log_trace("[%04X] MOV_LM(%02X) %04X", state->pc, MOV_LM, getHL(state));
-		state->l = readMemory(state, getHL(state));
+		log_trace("[%04X] MOV_LM(%02X) %04X", state->pc, MOV_LM, i8080op_getHL(state));
+		state->l = readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_LA:
 		log_trace("[%04X] MOV_LA(%02X) (la la la la la la la)", state->pc, MOV_LA);
@@ -622,31 +622,31 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case MOV_MB:
 		log_trace("[%04X] MOV_MB(%02X)", state->pc, MOV_MB);
-		writeMemory(state, getHL(state), state->b);
+		writeMemory(state, i8080op_getHL(state), state->b);
 		break;
 	case MOV_MC:
 		log_trace("[%04X] MOV_MC(%02X)", state->pc, MOV_MC);
-		writeMemory(state, getHL(state), state->c);
+		writeMemory(state, i8080op_getHL(state), state->c);
 		break;
 	case MOV_MD:
 		log_trace("[%04X] MOV_MD(%02X)", state->pc, MOV_MD);
-		writeMemory(state, getHL(state), state->d);
+		writeMemory(state, i8080op_getHL(state), state->d);
 		break;
 	case MOV_ME:
 		log_trace("[%04X] MOV_ME(%02X)", state->pc, MOV_ME);
-		writeMemory(state, getHL(state), state->e);
+		writeMemory(state, i8080op_getHL(state), state->e);
 		break;
 	case MOV_MH:
 		log_trace("[%04X] MOV_MH(%02X)", state->pc, MOV_MH);
-		writeMemory(state, getHL(state), state->h);
+		writeMemory(state, i8080op_getHL(state), state->h);
 		break;
 	case MOV_ML:
 		log_trace("[%04X] MOV_ML(%02X)", state->pc, MOV_ML);
-		writeMemory(state, getHL(state), state->h);
+		writeMemory(state, i8080op_getHL(state), state->h);
 		break;
 	case MOV_MA:
 		log_trace("[%04X] MOV_MA(%02X)", state->pc, MOV_MA);
-		writeMemory(state, getHL(state), state->a);
+		writeMemory(state, i8080op_getHL(state), state->a);
 		break;
 	case HLT:
 		// HALT THE PROGRAM?
@@ -678,8 +678,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		state->a = state->l;
 		break;
 	case MOV_AM:
-		log_trace("[%04X] MOV_AM(%02X) %04X", state->pc, MOV_AM, getHL(state));
-		state->l = readMemory(state, getHL(state));
+		log_trace("[%04X] MOV_AM(%02X) %04X", state->pc, MOV_AM, i8080op_getHL(state));
+		state->l = readMemory(state, i8080op_getHL(state));
 		break;
 	case MOV_AA:
 		log_trace("[%04X] MOV_AA(%02X) (British car recovery joke or screaming?)", state->pc, MOV_AA);
@@ -687,323 +687,323 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case ADD_B: // Adds B to A
 		log_trace("[%04X] ADD_B(%02X)", state->pc, ADD_B);
-		state->a = addCarry(state, state->a, state->b);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, state->b);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADD_C: // Adds C to A
 		log_trace("[%04X] ADD_C(%02X)", state->pc, ADD_C);
-		state->a = addCarry(state, state->a, state->c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, state->c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADD_D: // Adds D to A
 		log_trace("[%04X] ADD_D(%02X)", state->pc, ADD_D);
-		state->a = addCarry(state, state->a, state->d);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, state->d);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADD_E: // Adds E to A
 		log_trace("[%04X] ADD_E(%02X)", state->pc, ADD_E);
-		state->a = addCarry(state, state->a, state->e);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, state->e);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADD_H: // Adds H to A
 		log_trace("[%04X] ADD_H(%02X)", state->pc, ADD_H);
-		state->a = addCarry(state, state->a, state->h);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, state->h);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADD_L: // Adds L to A
 		log_trace("[%04X] ADD_L(%02X)", state->pc, ADD_L);
-		state->a = addCarry(state, state->a, state->l);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, state->l);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADD_M: // Adds memory[HL] to A
 		log_trace("[%04X] ADD_M(%02X)", state->pc, ADD_M);
-		state->a = addCarry(state, state->a, readMemory(state, getHL(state)));
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, readMemory(state, i8080op_getHL(state)));
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADD_A: // Adds A to A
 		log_trace("[%04X] ADD_A(%02X)", state->pc, ADD_A);
-		state->a = addCarry(state, state->a, state->a);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_B: // Adds B to A
 		log_trace("[%04X] ADC_B(%02X)", state->pc, ADC_B);
-		state->a = addCarry(state, addCarry(state, state->a, state->b), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, state->b), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_C: // Adds C to A
 		log_trace("[%04X] ADC_C(%02X)", state->pc, ADC_C);
-		state->a = addCarry(state, addCarry(state, state->a, state->c), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, state->c), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_D: // Adds D to A
 		log_trace("[%04X] ADC_D(%02X)", state->pc, ADC_D);
-		state->a = addCarry(state, addCarry(state, state->a, state->d), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, state->d), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_E: // Adds E to A
 		log_trace("[%04X] ADC_E(%02X)", state->pc, ADC_E);
-		state->a = addCarry(state, addCarry(state, state->a, state->e), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, state->e), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_H: // Adds H to A
 		log_trace("[%04X] ADC_H(%02X)", state->pc, ADC_H);
-		state->a = addCarry(state, addCarry(state, state->a, state->h), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, state->h), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_L: // Adds L to A
 		log_trace("[%04X] ADC_L(%02X)", state->pc, ADC_L);
-		state->a = addCarry(state, addCarry(state, state->a, state->l), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, state->l), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_M: // Adds memory[HL] to A
 		log_trace("[%04X] ADC_M(%02X)", state->pc, ADC_M);
-		state->a = addCarry(state, addCarry(state, state->a, readMemory(state, getHL(state))), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, readMemory(state, i8080op_getHL(state))), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ADC_A: // Adds A to A
 		log_trace("[%04X] ADC_A(%02X)", state->pc, ADC_A);
-		state->a = addCarry(state, addCarry(state, state->a, state->a), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, state->a), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_B: // takes B from A
 		log_trace("[%04X] SUB_B(%02X)", state->pc, SUB_B);
-		state->a = subCarry(state, state->a, state->b);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, state->b);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_C: // takes C from A
 		log_trace("[%04X] SUB_C(%02X)", state->pc, SUB_C);
-		state->a = subCarry(state, state->a, state->c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, state->c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_D: // takes D from A
 		log_trace("[%04X] SUB_D(%02X)", state->pc, SUB_D);
-		state->a = subCarry(state, state->a, state->d);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, state->d);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_E: // takes E from A
 		log_trace("[%04X] SUB_E(%02X)", state->pc, SUB_E);
-		state->a = subCarry(state, state->a, state->e);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, state->e);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_H: // takes H from A
 		log_trace("[%04X] SUB_H(%02X)", state->pc, SUB_H);
-		state->a = subCarry(state, state->a, state->h);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, state->h);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_L: // takes L from A
 		log_trace("[%04X] SUB_L(%02X)", state->pc, SUB_L);
-		state->a = subCarry(state, state->a, state->l);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, state->l);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_M: // takes memory[HL] from A
 		log_trace("[%04X] SUB_M(%02X)", state->pc, SUB_M);
-		state->a = subCarry(state, state->a, readMemory(state, getHL(state)));
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, readMemory(state, i8080op_getHL(state)));
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SUB_A: // takes A from A
 		log_trace("[%04X] SUB_A(%02X)", state->pc, SUB_A);
-		state->a = subCarry(state, state->a, state->a);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_B:
 		log_trace("[%04X] SBB_B(%02X)", state->pc, SBB_B);
-		state->a = subCarry(state, subCarry(state, state->a, state->b), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, state->b), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_C:
 		log_trace("[%04X] SBB_C(%02X)", state->pc, SBB_C);
-		state->a = subCarry(state, subCarry(state, state->a, state->c), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, state->c), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_D:
 		log_trace("[%04X] SBB_D(%02X)", state->pc, SBB_D);
-		state->a = subCarry(state, subCarry(state, state->a, state->d), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, state->d), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_E:
 		log_trace("[%04X] SBB_E(%02X)", state->pc, SBB_E);
-		state->a = subCarry(state, subCarry(state, state->a, state->e), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, state->e), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_H:
 		log_trace("[%04X] SBB_H(%02X)", state->pc, SBB_H);
-		state->a = subCarry(state, subCarry(state, state->a, state->h), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, state->h), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_L:
 		log_trace("[%04X] SBB_L(%02X)", state->pc, SBB_L);
-		state->a = subCarry(state, subCarry(state, state->a, state->l), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, state->l), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_M:
 		log_trace("[%04X] SBB_M(%02X)", state->pc, SBB_M);
-		state->a = subCarry(state, subCarry(state, state->a, readMemory(state, getHL(state))), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, readMemory(state, i8080op_getHL(state))), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case SBB_A:
 		log_trace("[%04X] SBB_A(%02X)", state->pc, SBB_A);
-		state->a = subCarry(state, subCarry(state, state->a, state->a), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, state->a), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_B:
 		log_trace("[%04X] ANA_B(%02X)", state->pc, ANA_B);
 		state->a = state->a & state->b;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_C:
 		log_trace("[%04X] ANA_C(%02X)", state->pc, ANA_C);
 		state->a = state->a & state->c;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_D:
 		log_trace("[%04X] ANA_D(%02X)", state->pc, ANA_D);
 		state->a = state->a & state->d;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_E:
 		log_trace("[%04X] ANA_E(%02X)", state->pc, ANA_E);
 		state->a = state->a & state->e;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_H:
 		log_trace("[%04X] ANA_H(%02X)", state->pc, ANA_H);
 		state->a = state->a & state->h;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_L:
 		log_trace("[%04X] ANA_L(%02X)", state->pc, ANA_L);
 		state->a = state->a & state->l;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_M:
 		log_trace("[%04X] ANA_L(%02X)", state->pc, ANA_M);
-		state->a = state->a & readMemory(state, getHL(state));
-		setZSPAC(state, state->a);
+		state->a = state->a & readMemory(state, i8080op_getHL(state));
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ANA_A:
 		log_trace("[%04X] ANA_A(%02X)", state->pc, ANA_A);
 		state->a = state->a & state->a;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_B:
 		log_trace("[%04X] XRA_B(%02X)", state->pc, XRA_B);
 		state->a = state->a ^ state->b;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_C:
 		log_trace("[%04X] XRA_C(%02X)", state->pc, XRA_C);
 		state->a = state->a ^ state->c;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_D:
 		log_trace("[%04X] XRA_D(%02X)", state->pc, XRA_D);
 		state->a = state->a ^ state->d;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_E:
 		log_trace("[%04X] XRA_E(%02X)", state->pc, XRA_E);
 		state->a = state->a ^ state->e;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_H:
 		log_trace("[%04X] XRA_H(%02X)", state->pc, XRA_H);
 		state->a = state->a ^ state->h;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_L:
 		log_trace("[%04X] XRA_L(%02X)", state->pc, XRA_L);
 		state->a = state->a ^ state->l;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_M:
 		log_trace("[%04X] XRA_M(%02X)", state->pc, XRA_M);
-		state->a = state->a ^ readMemory(state, getHL(state));
-		setZSPAC(state, state->a);
+		state->a = state->a ^ readMemory(state, i8080op_getHL(state));
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case XRA_A:
 		log_trace("[%04X] XRA_A(%02X)", state->pc, XRA_A);
 		state->a = state->a ^ state->a;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_B:
 		log_trace("[%04X] ORA_B(%02X)", state->pc, ORA_B);
 		state->a = state->a | state->b;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_C:
 		log_trace("[%04X] ORA_C(%02X)", state->pc, ORA_C);
 		state->a = state->a | state->c;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_D:
 		log_trace("[%04X] ORA_D(%02X)", state->pc, ORA_D);
 		state->a = state->a | state->d;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_E:
 		log_trace("[%04X] ORA_E(%02X)", state->pc, ORA_E);
 		state->a = state->a | state->e;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_H:
 		log_trace("[%04X] ORA_H(%02X)", state->pc, ORA_H);
 		state->a = state->a | state->h;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_L:
 		log_trace("[%04X] ORA_L(%02X)", state->pc, ORA_L);
 		state->a = state->a | state->l;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_M:
 		log_trace("[%04X] ORA_M(%02X)", state->pc, ORA_M);
-		state->a = state->a | readMemory(state, getHL(state));
-		setZSPAC(state, state->a);
+		state->a = state->a | readMemory(state, i8080op_getHL(state));
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case ORA_A:
 		log_trace("[%04X] ORA_A(%02X)", state->pc, ORA_A);
 		state->a = state->a | state->a;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case CMP_B: // takes B from A
 		log_trace("[%04X] CMP_B(%02X)", state->pc, CMP_B);
-		store8_1 = subCarry(state, state->a, state->b);
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, state->b);
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case CMP_C: // takes C from A
 		log_trace("[%04X] CMP_C(%02X)", state->pc, CMP_C);
-		store8_1 = subCarry(state, state->a, state->c);
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, state->c);
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case CMP_D: // takes D from A
 		log_trace("[%04X] CMP_D(%02X)", state->pc, CMP_D);
-		store8_1 = subCarry(state, state->a, state->d);
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, state->d);
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case CMP_E: // takes E from A
 		log_trace("[%04X] CMP_E(%02X)", state->pc, CMP_E);
-		store8_1 = subCarry(state, state->a, state->e);
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, state->e);
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case CMP_H: // takes H from A
 		log_trace("[%04X] CMP_H(%02X)", state->pc, CMP_H);
-		store8_1 = subCarry(state, state->a, state->h);
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, state->h);
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case CMP_L: // takes L from A
 		log_trace("[%04X] CMP_L(%02X)", state->pc, CMP_L);
-		store8_1 = subCarry(state, state->a, state->l);
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, state->l);
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case CMP_M: // takes memory[HL] from A
 		log_trace("[%04X] CMP_M(%02X)", state->pc, CMP_M);
-		store8_1 = subCarry(state, state->a, readMemory(state, getHL(state)));
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, readMemory(state, i8080op_getHL(state)));
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case CMP_A: // takes A from A
 		log_trace("[%04X] CMP_A(%02X)", state->pc, CMP_A);
-		store8_1 = subCarry(state, state->a, state->a);
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, state->a);
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case RNZ:
 		log_trace("[%04X] RNZ(%02X)", state->pc, RNZ);
@@ -1015,7 +1015,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case POP_B:
 		log_trace("[%04X] POP_B(%02X)", state->pc, POP_B);
-		putBC16(state, popStack(state));
+		i8080op_putBC16(state, popStack(state));
 		break;
 	case JNZ:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
@@ -1041,13 +1041,13 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		success = !state->f.z;
 		break;
 	case PUSH_B:
-		log_trace("[%04X] PUSH_B(%02X) %04X", state->pc, PUSH_B, getBC(state));
-		pushStack(state, getBC(state));
+		log_trace("[%04X] PUSH_B(%02X) %04X", state->pc, PUSH_B, i8080op_getBC(state));
+		pushStack(state, i8080op_getBC(state));
 		break;
 	case ADI: // Adds D8 to A
 		log_trace("[%04X] ADI(%02X) %02X", state->pc, ADI, byte1);
-		state->a = addCarry(state, state->a, byte1);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, state->a, byte1);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case RST_0: // Call $0x0
 		log_trace("[%04X] RST_0(%02X)", state->pc, RST_0);
@@ -1092,8 +1092,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case ACI: // Adds D8 to A
 		log_trace("[%04X] ACI(%02X) %02X", state->pc, ACI, byte1);
-		state->a = addCarry(state, addCarry(state, state->a, byte1), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_addCarry8(state, i8080op_addCarry8(state, state->a, byte1), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case RST_1:
 		log_trace("[%04X] RST_1(%02X)", state->pc, RST_1);
@@ -1110,7 +1110,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case POP_D:
 		log_trace("[%04X] POP_D(%02X)", state->pc, POP_D);
-		putDE16(state, popStack(state));
+		i8080op_putDE16(state, popStack(state));
 		break;
 	case JNC:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
@@ -1134,13 +1134,13 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		success = !state->f.c;
 		break;
 	case PUSH_D:
-		log_trace("[%04X] PUSH_D(%02X) %04X", state->pc, PUSH_D, getDE(state));
-		pushStack(state, getDE(state));
+		log_trace("[%04X] PUSH_D(%02X) %04X", state->pc, PUSH_D, i8080op_getDE(state));
+		pushStack(state, i8080op_getDE(state));
 		break;
 	case SUI: // takes D8 from A
 		log_trace("[%04X] SUI(%02X) %02X", state->pc, SUI, byte1);
-		state->a = subCarry(state, state->a, byte1);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, state->a, byte1);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case RST_2:
 		log_trace("[%04X] RST_2(%02X)", state->pc, RST_2);
@@ -1177,8 +1177,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case SBI: // takes D8 from A
 		log_trace("[%04X] SUI(%02X) %02X", state->pc, SUI, byte1);
-		state->a = subCarry(state, subCarry(state, state->a, byte1), state->f.c);
-		setZSPAC(state, state->a);
+		state->a = i8080op_subCarry8(state, i8080op_subCarry8(state, state->a, byte1), state->f.c);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case RST_3:
 		log_trace("[%04X] RST_3(%02X)", state->pc, RST_3);
@@ -1195,7 +1195,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case POP_H:
 		log_trace("[%04X] POP_H(%02X)", state->pc, POP_H);
-		putHL16(state, popStack(state));
+		i8080op_i8080op_putHL16(state, popStack(state));
 		break;
 	case JPO:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
@@ -1208,8 +1208,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case XTHL:
 		log_trace("[%04X] XTHL(%02X)", state->pc, XTHL);
 		store16_1 = popStack(state);
-		pushStack(state, getHL(state));
-		putHL16(state, store16_1);
+		pushStack(state, i8080op_getHL(state));
+		i8080op_i8080op_putHL16(state, store16_1);
 		break;
 	case CPO:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
@@ -1221,13 +1221,13 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		success = state->f.p;
 		break;
 	case PUSH_H:
-		log_trace("[%04X] PUSH_H(%02X) %04X", state->pc, PUSH_H, getHL(state));
-		pushStack(state, getHL(state));
+		log_trace("[%04X] PUSH_H(%02X) %04X", state->pc, PUSH_H, i8080op_getHL(state));
+		pushStack(state, i8080op_getHL(state));
 		break;
 	case ANI:
 		log_trace("[%04X] ANI(%02X) %02X", state->pc, ANI, byte1);
 		state->a = state->a & byte1;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case RST_4:
 		log_trace("[%04X] RST_4(%02X)", state->pc, RST_4);
@@ -1244,7 +1244,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case PCHL:
 		log_trace("[%04X] PCHL(%02X)", state->pc, PCHL);
-		setPC(state, getHL(state));
+		setPC(state, i8080op_getHL(state));
 		pcShouldIncrement = false;
 		break;
 	case JPE:
@@ -1257,9 +1257,9 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case XCHG:
 		log_trace("[%04X] XCHG(%02X)", state->pc, XCHG);
-		store16_1 = getDE(state);
-		putDE16(state, getHL(state));
-		putHL16(state, store16_1);
+		store16_1 = i8080op_getDE(state);
+		i8080op_putDE16(state, i8080op_getHL(state));
+		i8080op_i8080op_putHL16(state, store16_1);
 		break;
 	case CPE:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
@@ -1273,7 +1273,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 	case XRI:
 		log_trace("[%04X] XRI(%02X) %02X", state->pc, XRI, byte1);
 		state->a = state->a ^ byte1;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 		break;
 	case RST_5:
 		log_trace("[%04X] RST_5(%02X)", state->pc, RST_5);
@@ -1292,7 +1292,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] POP_PSW(%02X)", state->pc, POP_PSW);
 		store16_1 = popStack(state);
 		state->a = (store16_1 & 0xFF00) >> 8;
-		putFlags(state, store16_1 & 0xFF);
+		i8080op_putFlags(state, store16_1 & 0xFF);
 		break;
 	case JP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
@@ -1316,13 +1316,13 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		success = !state->f.s;
 		break;
 	case PUSH_PSW:
-		log_trace("[%04X] PUSH_PSW(%02X) %04X", state->pc, PUSH_PSW, getPSW(state));
-		pushStack(state, getPSW(state));
+		log_trace("[%04X] PUSH_PSW(%02X) %04X", state->pc, PUSH_PSW, i8080op_getPSW(state));
+		pushStack(state, i8080op_getPSW(state));
 		break;
 	case ORI:
 		log_trace("[%04X] ORI(%02X) %02X", state->pc, ORI, byte1);
 		state->a = state->a | byte1;
-		setZSPAC(state, state->a);
+		i8080op_setZSPAC(state, state->a);
 	case RST_6:
 		log_trace("[%04X] RST_6(%02X)", state->pc, RST_6);
 		executeCALL(state, INTERRUPT_6);
@@ -1338,7 +1338,7 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case SPHL:
 		log_trace("[%04X] SPHL(%02X)", state->pc, SPHL);
-		setSP(state, getHL(state));
+		setSP(state, i8080op_getHL(state));
 		break;
 	case JM:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
@@ -1363,8 +1363,8 @@ bool executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case CPI:
 		log_trace("[%04X] CMP_A(%02X) %02X", state->pc, CMP_A, byte1);
-		store8_1 = subCarry(state, state->a, byte1);
-		setZSPAC(state, store8_1);
+		store8_1 = i8080op_subCarry8(state, state->a, byte1);
+		i8080op_setZSPAC(state, store8_1);
 		break;
 	case RST_7:
 		log_trace("[%04X] RST_7(%02X)", state->pc, RST_7);

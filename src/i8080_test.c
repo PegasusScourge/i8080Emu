@@ -49,25 +49,25 @@ void i8080_testProtocol() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test isParityEven(0xFE)=%i\t\t\t: [%s]\n", isParityEven(0xFE), success ? "OK" : "FAIL");
 
-	addCarry16(state, 0xFFFF, 0x0001);
+	i8080op_addCarry16(state, 0xFFFF, 0x0001);
 	success = state->f.c;
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test addCarry16(0xFFFF, 0x01)=%i\t\t: [%s]\n", addCarry16(state, 0xFFFF, 0x0001), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080op_addCarry16(0xFFFF, 0x01)=%i\t\t: [%s]\n", i8080op_addCarry16(state, 0xFFFF, 0x0001), success ? "OK" : "FAIL");
 
-	subCarry16(state, 0x02, 0x03);
+	i8080op_subCarry16(state, 0x02, 0x03);
 	success = state->f.c;
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test subCarry16(0x02, 0x03)=%i\t: [%s]\n", subCarry16(state, 0x02, 0x03), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080op_subCarry16(0x02, 0x03)=%i\t: [%s]\n", i8080op_subCarry16(state, 0x02, 0x03), success ? "OK" : "FAIL");
 
-	addCarry(state, 0xFF, 0x1);
+	i8080op_addCarry8(state, 0xFF, 0x1);
 	success = state->f.c;
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test addCarry(0xFF, 0x01)=%i\t\t\t: [%s]\n", addCarry(state, 0xFF, 0x1), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080op_addCarry8(0xFF, 0x01)=%i\t\t\t: [%s]\n", i8080op_addCarry8(state, 0xFF, 0x1), success ? "OK" : "FAIL");
 
-	subCarry(state, 0x02, 0x03);
+	i8080op_subCarry8(state, 0x02, 0x03);
 	success = state->f.c;
 	if (!success) { failedTests++; }
-	fprintf(testLog, "Test subCarry(0x02, 0x03)=%i\t\t: [%s]\n", subCarry(state, 0x02, 0x03), success ? "OK" : "FAIL");
+	fprintf(testLog, "Test i8080op_subCarry8(0x02, 0x03)=%i\t\t: [%s]\n", i8080op_subCarry8(state, 0x02, 0x03), success ? "OK" : "FAIL");
 
 	fprintf(testLog, "\n--- instruction tests ---\n");
 
@@ -83,9 +83,9 @@ void i8080_testProtocol() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test STAX_B\t(%02X)\t\t: [%s]\n", STAX_B, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, INX_B, 0x00, 0x00); putBC16(state, 0x2); // Setup the command
+	utilTest_prepNext(state, INX_B, 0x00, 0x00); i8080op_putBC16(state, 0x2); // Setup the command
 	cpuTick(state); // Execute command
-	success = getBC(state) == 0x3;
+	success = i8080op_getBC(state) == 0x3;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test INX_B\t(%02X)\t\t: [%s]\n", INX_B, success ? "OK" : "FAIL"); // Print the result of the test
 
@@ -114,21 +114,21 @@ void i8080_testProtocol() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test RLC\t(%02X)\t\t: [%s]\n", RLC, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, DAD_B, 0x00, 0x00); putBC16(state, 0x1); putHL16(state, 0xFFFF); // Setup the command
+	utilTest_prepNext(state, DAD_B, 0x00, 0x00); i8080op_putBC16(state, 0x1); i8080op_i8080op_putHL16(state, 0xFFFF); // Setup the command
 	cpuTick(state); // Execute command
-	success = getHL(state) == 0x0 && state->f.c == 1;
+	success = i8080op_getHL(state) == 0x0 && state->f.c == 1;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DAD_B\t(%02X)\t\t: [%s]\n", DAD_B, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, LDAX_B, LDAX_B, 0x00); putBC16(state, 0x1); // Setup the command
+	utilTest_prepNext(state, LDAX_B, LDAX_B, 0x00); i8080op_putBC16(state, 0x1); // Setup the command
 	cpuTick(state); // Execute command
 	success = state->a == LDAX_B;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test LDAX_B\t(%02X)\t\t: [%s]\n", LDAX_B, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, DCX_B, 0x00, 0x00); putBC16(state, 0x1); // Setup the command
+	utilTest_prepNext(state, DCX_B, 0x00, 0x00); i8080op_putBC16(state, 0x1); // Setup the command
 	cpuTick(state); // Execute command
-	success = getBC(state) == 0x00;
+	success = i8080op_getBC(state) == 0x00;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DCX_B\t(%02X)\t\t: [%s]\n", DCX_B, success ? "OK" : "FAIL"); // Print the result of the test
 
@@ -168,9 +168,9 @@ void i8080_testProtocol() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test STAX_B\t(%02X)\t\t: [%s]\n", STAX_B, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, INX_D, 0x00, 0x00); putDE16(state, 0xF0); // Setup the command
+	utilTest_prepNext(state, INX_D, 0x00, 0x00); i8080op_putDE16(state, 0xF0); // Setup the command
 	cpuTick(state); // Execute command
-	success = getDE(state) == 0xF1;
+	success = i8080op_getDE(state) == 0xF1;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test INX_D\t(%02X)\t\t: [%s]\n", INX_D, success ? "OK" : "FAIL"); // Print the result of the test
 
@@ -199,21 +199,21 @@ void i8080_testProtocol() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test RAL\t(%02X)\t\t: [%s]\n", RAL, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, DAD_D, 0x00, 0x00); putDE16(state, 0x1); putHL16(state, 0xFFFF); // Setup the command
+	utilTest_prepNext(state, DAD_D, 0x00, 0x00); i8080op_putDE16(state, 0x1); i8080op_i8080op_putHL16(state, 0xFFFF); // Setup the command
 	cpuTick(state); // Execute command
-	success = getHL(state) == 0x0 && state->f.c == 1;
+	success = i8080op_getHL(state) == 0x0 && state->f.c == 1;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DAD_D\t(%02X)\t\t: [%s]\n", DAD_D, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, LDAX_D, LDAX_D, 0x00); putDE16(state, 0x1); // Setup the command
+	utilTest_prepNext(state, LDAX_D, LDAX_D, 0x00); i8080op_putDE16(state, 0x1); // Setup the command
 	cpuTick(state); // Execute command
 	success = state->a == LDAX_D;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test LDAX_D\t(%02X)\t\t: [%s]\n", LDAX_D, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, DCX_D, 0x00, 0x00); putDE16(state, 0x1); // Setup the command
+	utilTest_prepNext(state, DCX_D, 0x00, 0x00); i8080op_putDE16(state, 0x1); // Setup the command
 	cpuTick(state); // Execute command
-	success = getDE(state) == 0x00;
+	success = i8080op_getDE(state) == 0x00;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DCX_D\t(%02X)\t\t: [%s]\n", DCX_D, success ? "OK" : "FAIL"); // Print the result of the test
 
@@ -247,15 +247,15 @@ void i8080_testProtocol() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test LXI_B\t(%02X)\t\t: [%s]\n", LXI_H, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, SHLD, 0xFF, 0x00); putHL16(state, 0xFFEE); // Setup the command
+	utilTest_prepNext(state, SHLD, 0xFF, 0x00); i8080op_i8080op_putHL16(state, 0xFFEE); // Setup the command
 	cpuTick(state); // Execute command
 	success = readMemory(state, 0x00FF) == 0xEE && readMemory(state, 0x0100) == 0xFF;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test SHLD\t(%02X)\t\t: [%s]\n", SHLD, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, INX_H, 0x00, 0x00); putHL16(state, 0x2); // Setup the command
+	utilTest_prepNext(state, INX_H, 0x00, 0x00); i8080op_i8080op_putHL16(state, 0x2); // Setup the command
 	cpuTick(state); // Execute command
-	success = getHL(state) == 0x3;
+	success = i8080op_getHL(state) == 0x3;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test INX_H\t(%02X)\t\t: [%s]\n", INX_H, success ? "OK" : "FAIL"); // Print the result of the test
 
@@ -278,21 +278,21 @@ void i8080_testProtocol() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test MVI_H\t(%02X)\t\t: [%s]\n", MVI_H, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, DAD_H, 0x00, 0x00); putHL16(state, 0x1); // Setup the command
+	utilTest_prepNext(state, DAD_H, 0x00, 0x00); i8080op_i8080op_putHL16(state, 0x1); // Setup the command
 	cpuTick(state); // Execute command
-	success = getHL(state) == 0x2 && state->f.c == 0;
+	success = i8080op_getHL(state) == 0x2 && state->f.c == 0;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DAD_H\t(%02X)\t\t: [%s]\n", DAD_H, success ? "OK" : "FAIL"); // Print the result of the test
 
 	utilTest_prepNext(state, LHLD, 0xFF, 0x00); // Setup the command
 	cpuTick(state); // Execute command
-	success = getHL(state) == 0xFFEE;
+	success = i8080op_getHL(state) == 0xFFEE;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test LHLD\t(%02X)\t\t: [%s]\n", LHLD, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, DCX_H, 0x00, 0x00); putHL16(state, 0x1); // Setup the command
+	utilTest_prepNext(state, DCX_H, 0x00, 0x00); i8080op_i8080op_putHL16(state, 0x1); // Setup the command
 	cpuTick(state); // Execute command
-	success = getHL(state) == 0x00;
+	success = i8080op_getHL(state) == 0x00;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DCX_H\t(%02X)\t\t: [%s]\n", DCX_H, success ? "OK" : "FAIL"); // Print the result of the test
 
@@ -338,20 +338,20 @@ void i8080_testProtocol() {
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test INX_SP\t(%02X)\t\t: [%s]\n", INX_SP, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, INR_M, 0x00, 0x00); writeMemory(state, 0x00FF, 0xFF); putHL16(state, 0x00FF); // Setup the command
+	utilTest_prepNext(state, INR_M, 0x00, 0x00); writeMemory(state, 0x00FF, 0xFF); i8080op_i8080op_putHL16(state, 0x00FF); // Setup the command
 	cpuTick(state); // Execute command
 	success = readMemory(state, 0x00FF) == 0x00 && state->f.z == 1 && state->f.s == 0 && state->f.p == 1 && state->f.ac == 1;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test INR_M\t(%02X)\t\t: [%s]\n", INR_M, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, DCR_M, 0x00, 0x00); writeMemory(state, 0x00FF, 0x00); putHL16(state, 0x00FF); // Setup the command
+	utilTest_prepNext(state, DCR_M, 0x00, 0x00); writeMemory(state, 0x00FF, 0x00); i8080op_i8080op_putHL16(state, 0x00FF); // Setup the command
 	cpuTick(state); // Execute command
 	success = readMemory(state, 0x00FF) == 0xFF && state->f.z == 0 && state->f.s == 1 && state->f.p == 1 && state->f.ac == 0;
 	//log_debug("b:%i z:%i s:%i p:%i ac:%i", state->b, state->f.z, state->f.s, state->f.p, state->f.ac);
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DCR_M\t(%02X)\t\t: [%s]\n", DCR_M, success ? "OK" : "FAIL"); // Print the result of the test
 
-	utilTest_prepNext(state, MVI_M, 0x42, 0x00); putHL16(state, 0x40); // Setup the command
+	utilTest_prepNext(state, MVI_M, 0x42, 0x00); i8080op_i8080op_putHL16(state, 0x40); // Setup the command
 	cpuTick(state); // Execute command
 	success = readMemory(state, 0x40) == 0x42;
 	if (!success) { failedTests++; }
@@ -359,9 +359,9 @@ void i8080_testProtocol() {
 
 	// note
 
-	utilTest_prepNext(state, DAD_SP, 0x00, 0x00); putHL16(state, 0x1); state->sp = 0x2;// Setup the command
+	utilTest_prepNext(state, DAD_SP, 0x00, 0x00); i8080op_i8080op_putHL16(state, 0x1); state->sp = 0x2;// Setup the command
 	cpuTick(state); // Execute command
-	success = getHL(state) == 0x3 && state->f.c == 0;
+	success = i8080op_getHL(state) == 0x3 && state->f.c == 0;
 	if (!success) { failedTests++; }
 	fprintf(testLog, "Test DAD_SP\t(%02X)\t\t: [%s]\n", DAD_SP, success ? "OK" : "FAIL"); // Print the result of the test
 

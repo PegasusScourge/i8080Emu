@@ -198,7 +198,7 @@ bool shouldACFlag(uint8_t n) {
 	return (n & 0xF) == 0;
 }
 
-char* decimal_to_binary(uint16_t n) {
+char* i8080op_decToBin(uint16_t n) {
 	int c, d, count;
 	char* pointer;
 
@@ -223,7 +223,7 @@ char* decimal_to_binary(uint16_t n) {
 	return  pointer;
 }
 
-uint16_t getPSW(i8080State* state) {
+uint16_t i8080op_getPSW(i8080State* state) {
 	uint16_t res = 0;
 	res += state->a << 8;
 	res += state->f.s << 7;
@@ -236,53 +236,53 @@ uint16_t getPSW(i8080State* state) {
 	return res;
 }
 
-uint16_t getBC(i8080State* state) {
+uint16_t i8080op_getBC(i8080State* state) {
 	return ((uint16_t)state->b << 8) + state->c;
 }
 
-uint16_t getDE(i8080State* state) {
+uint16_t i8080op_getDE(i8080State* state) {
 	return ((uint16_t)state->d << 8) + state->e;
 }
 
-uint16_t getHL(i8080State* state) {
+uint16_t i8080op_getHL(i8080State* state) {
 	return ((uint16_t)state->h << 8) + state->l;
 }
 
-void putBC(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
+void i8080op_putBC8(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
 	state->b = ubyte;
 	state->c = lbyte;
 }
-void putBC16(i8080State* state, uint16_t b) {
+void i8080op_putBC16(i8080State* state, uint16_t b) {
 	state->b = b >> 8;
 	state->c = b & 0xFF;
 }
 
-void putDE(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
+void i8080op_putDE8(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
 	state->d = ubyte;
 	state->e = lbyte;
 }
-void putDE16(i8080State* state, uint16_t b) {
+void i8080op_putDE16(i8080State* state, uint16_t b) {
 	state->d = b >> 8;
 	state->e = b & 0xFF;
 }
 
-void putHL(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
+void i8080op_putHL8(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
 	state->h = ubyte;
 	state->l = lbyte;
 }
-void putHL16(i8080State* state, uint16_t b) {
+void i8080op_i8080op_putHL16(i8080State* state, uint16_t b) {
 	state->h = b >> 8;
 	state->l = b & 0xFF;
 }
 
-void setZSPAC(i8080State* state, uint8_t v) {
+void i8080op_setZSPAC(i8080State* state, uint8_t v) {
 	state->f.z = isZero(v);
 	state->f.s = isNegative(v);
 	state->f.p = isParityEven(v);
 	state->f.ac = shouldACFlag(v);
 }
 
-void putFlags(i8080State* state, uint8_t fv) {
+void i8080op_putFlags(i8080State* state, uint8_t fv) {
 	state->f.s = (fv & 0x80) >> 7;
 	state->f.z = (fv & 0x40) >> 6;
 	state->f.ac = (fv & 0x10) >> 4;
@@ -290,40 +290,40 @@ void putFlags(i8080State* state, uint8_t fv) {
 	state->f.c = (fv & 0x01);
 }
 
-uint8_t rotateBitwiseLeft(i8080State* state, uint8_t v) {
+uint8_t i8080op_rotateBitwiseLeft(i8080State* state, uint8_t v) {
 	uint8_t store8_1 = (v >> 7); // Get the 7th bit
 	state->f.c = store8_1; // Store it in the carry flag
 	return (v << 1) | store8_1; // Store the 0th bit in position
 }
 
-uint8_t rotateBitwiseRight(i8080State* state, uint8_t v) {
+uint8_t i8080op_rotateBitwiseRight(i8080State* state, uint8_t v) {
 	uint8_t store8_1 = v & 0x01; // Get the 0th bit
 	state->f.c = store8_1; // Store it in the carry flag
 	return (v >> 1) | (store8_1 << 7); // Store the 7th bit in position
 }
 
-uint16_t addCarry16(i8080State* state, uint16_t a, uint16_t b) {
+uint16_t i8080op_addCarry16(i8080State* state, uint16_t a, uint16_t b) {
 	uint32_t store32_1 = (uint32_t)a + (uint32_t)b;
 	state->f.c = (store32_1 & 0xFFFF0000) >> 16;
 	//log_debug("carry:%i, val:%08X", state->f.c, store32_1);
 	return store32_1 & 0xFFFF;
 }
 
-uint16_t subCarry16(i8080State* state, uint16_t a, uint16_t b) {
+uint16_t i8080op_subCarry16(i8080State* state, uint16_t a, uint16_t b) {
 	state->f.c = a < b;
 	uint16_t store16_1 = a + ~b + state->f.c;
 	log_debug("sub carry:%i, val:%08X", state->f.c, store16_1);
 	return store16_1;
 }
 
-uint8_t addCarry(i8080State* state, uint8_t a, uint8_t b) {
+uint8_t i8080op_addCarry8(i8080State* state, uint8_t a, uint8_t b) {
 	uint16_t store16_1 = (uint16_t)a + (uint16_t)b;
 	state->f.c = (store16_1 & 0xFF00) >> 8;
 	//log_debug("carry:%i, val:%08X", state->f.c, store32_1);
 	return store16_1 & 0xFF;
 }
 
-uint8_t subCarry(i8080State* state, uint8_t a, uint8_t b) {
+uint8_t i8080op_subCarry8(i8080State* state, uint8_t a, uint8_t b) {
 	state->f.c = a < b;
 	uint8_t store8_1 = a + ~b + state->f.c;
 	log_debug("sub carry:%i, val:%08X", state->f.c, store8_1);
