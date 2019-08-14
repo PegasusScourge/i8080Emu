@@ -26,6 +26,8 @@ void i8080_cpuTick(i8080State* state) {
 			}
 			state->previousInstructions[0].cycleNum = state->cyclesExecuted;
 			state->previousInstructions[0].opcode = opcode;
+			state->previousInstructions[0].b1 = i8080op_readMemory(state, state->pc + 1);
+			state->previousInstructions[0].b2 = i8080op_readMemory(state, state->pc + 2);
 			state->previousInstructions[0].pc = state->pc;
 			state->previousInstructions[0].psw = i8080op_getPSW(state);
 			state->previousInstructions[0].statusString = state->statusString;
@@ -68,7 +70,7 @@ void i8080_panic(i8080State* state) {
 
 	// Print the last instructions
 	for (int i = 0; i < INSTRUCTION_TRACE_LEN; i++) {
-		fprintf(dumpFile, "{-%i}[%ul][PC:%04X] %s(%02X) (PSW:%04X, %s)(TS:%04X)\n", i, state->previousInstructions[i].cycleNum, state->previousInstructions[i].pc, state->previousInstructions[i].statusString, state->previousInstructions[i].opcode, state->previousInstructions[i].psw, i8080_decToBin(state->previousInstructions[i].psw), state->previousInstructions[i].topStack);
+		fprintf(dumpFile, "{-%i}[%ul][PC:%04X] %s(%02X) (PSW:%04X, %s)(TS:%04X) B1:%02X B2:%02X\n", i, state->previousInstructions[i].cycleNum, state->previousInstructions[i].pc, state->previousInstructions[i].statusString, state->previousInstructions[i].opcode, state->previousInstructions[i].psw, i8080_decToBin(state->previousInstructions[i].psw), state->previousInstructions[i].topStack, state->previousInstructions[i].b1, state->previousInstructions[i].b2);
 	}
 
 	fprintf(dumpFile, "------\n\nMemory dump in file 'mem.dump'");

@@ -54,6 +54,8 @@ typedef int int32_t;
 
 typedef struct prevInstruction {
 	uint8_t opcode;
+	uint8_t b1;
+	uint8_t b2;
 	uint16_t pc;
 	uint16_t psw;
 	uint16_t topStack;

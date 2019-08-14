@@ -197,7 +197,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 
 	pos.x = 16;
 	pos.y = 550;
-	sfText_setString(renderText, "[BACKSPACE] --> HLT, [P] --> pause, [O] --> normal, [S] --> step"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+	sfText_setString(renderText, "[ESC] --> exit, [BACKSPACE] --> HLT, [P] --> pause, [O] --> normal, [S] --> step"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 	sfText_setString(renderText, "Current mode:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
 	sfText_setString(renderText, getModeStr(state->mode)); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 
@@ -346,6 +346,24 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	}
 	*/
 
+	#define X_POS_INST_TRC_COL 700
+	pos.x = X_POS_INST_TRC_COL;
+	pos.y = TEXT_SIZE + 4;
+
+	sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+	//sfText_setCharacterSize(renderText, 12);
+	
+	sfText_setString(renderText, "Instruction trace:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+	pos.y += incY;
+
+	// Print the last instructions
+	int maxInstructionTrace = INSTRUCTION_TRACE_LEN > 10 ? 10 : INSTRUCTION_TRACE_LEN;
+	for (int i = 0; i < maxInstructionTrace; i++) {
+		sprintf(buf, "{-%i}[PC:%04X] %s(%02X) (TS:%04X) B1:%02X B2:%02X", i, state->previousInstructions[i].pc, state->previousInstructions[i].statusString, state->previousInstructions[i].opcode, state->previousInstructions[i].topStack, state->previousInstructions[i].b1, state->previousInstructions[i].b2);
+		sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+		pos.y += incY;
+	}
+
 	sfText_destroy(renderText);
 }
 
@@ -414,7 +432,7 @@ void pollInput(i8080State* state) {
 
 void initGraphics(unsigned int width, unsigned int height) {
 	sfVideoMode videoMode;
-	videoMode.width = 1024;
+	videoMode.width = 1152;
 	videoMode.height = 600;
 
 	sfContextSettings contextSettings;

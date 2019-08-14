@@ -370,7 +370,7 @@ void reset8080(i8080State* state) {
 	state->f.s = 0;
 	state->f.z = 0;
 	state->f.zero = 0;
-	state->f.ien = 1; // Interrupts are enabled by default
+	state->f.ien = 0; // Interrupts are disabled by default
 	state->f.isi = 0;
 
 	// Set the video memory flags
@@ -386,9 +386,11 @@ void reset8080(i8080State* state) {
 	for (int i = 0; i < INSTRUCTION_TRACE_LEN; i++) {
 		state->previousInstructions[i].cycleNum = 0;
 		state->previousInstructions[i].opcode = 0;
+		state->previousInstructions[i].b1 = 0;
+		state->previousInstructions[i].b2 = 0;
 		state->previousInstructions[i].pc = 0;
 		state->previousInstructions[i].psw = 0;
-		state->previousInstructions[i].statusString = "";
+		state->previousInstructions[i].statusString = "NOP";
 		state->previousInstructions[i].topStack = 0;
 	}
 }
