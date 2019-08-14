@@ -29,6 +29,14 @@ const uint8_t instructionParams[0x100][3] = {
 	{1, 11,5},{1, 10,0},{3, 10,0},{1, 4, 0},{3,17,11},{1, 11,0},{2, 7, 0},{1, 11,0},{1, 11,5},{1, 10,0},{3, 10,0},{1, 4, 0},{3,17,11},{3, 17,0},{2, 7, 0},{1, 11,0},
 };
 
+const char* i8080_decompile(uint8_t opcode) {
+	switch (opcode) {
+	case NOP: return "NOP"; break;
+	case LXI_B: return "LXI B"; break;
+	}
+	return "unknown";
+}
+
 void loadFile(const char* file, unsigned char* buffer, int bufferSize, int offset) {
 	FILE* f = fopen(file, "rb");
 	if (f == NULL)

@@ -427,3 +427,6 @@ uint16_t i8080op_subCarry16(i8080State* state, uint16_t a, uint16_t b);
 
 // Subtracts two 8 bit numbers and sets the carry flag as appropriate
 uint8_t i8080op_subCarry8(i8080State* state, uint8_t a, uint8_t b);
+
+// Fills the buffer with the mneumonic for the opcode
+const char* i8080_decompile(uint8_t opcode);

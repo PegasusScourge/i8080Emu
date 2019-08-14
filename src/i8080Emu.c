@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
 		fprintf(fp, "Opcode use table\n------------------------------------------\n");
 		for (int i = 0; i < 0x100; i++) {
 			if (state.opcodeUse[i]) {
-				fprintf(fp, "%02X\n", i);
+				fprintf(fp, "%02X: %s\n", i, i8080_decompile(i));
 			}
 		}
 		fprintf(fp, "------------------------------------------\n");
