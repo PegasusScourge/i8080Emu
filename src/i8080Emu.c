@@ -490,7 +490,7 @@ void processSwitches(i8080State* state, int argc, char** argv) {
 				}
 			}
 			else if (strcmp("--test", argv[i]) == 0) {
-				i8080_testProtocol();
+				i8080_testProtocol(state);
 				exit(0);
 			}
 		}

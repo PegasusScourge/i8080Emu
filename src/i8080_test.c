@@ -8,13 +8,7 @@ Test protocol function. Massive single opcode test for each opcode
 
 #include "i8080_test.h"
 
-void i8080_testProtocol() {
-	i8080State* state = malloc(sizeof(i8080State));
-
-	if (state == NULL) {
-		log_fatal("Test protocol failure: unable to allocate for state");
-		exit(-1);
-	}
+void i8080_testProtocol(i8080State* state) {
 
 	FILE* testLog = fopen("i8080_test.log", "w");
 	bool success = false;
@@ -412,8 +406,6 @@ void i8080_testProtocol() {
 	float elapsedTimeSec = elapsedTimeMs / 1000.0f;
 	fprintf(testLog, "--------------------------------------------------\nTest complete!\nTime to complete test: %f seconds\nTests failed: %i\n", elapsedTimeSec, failedTests);
 
-	// free the state
-	free(state);
 	// cloe test file
 	fclose(testLog);
 }
