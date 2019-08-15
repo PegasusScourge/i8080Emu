@@ -80,6 +80,7 @@ typedef struct videoMemoryInfo {
 	uint16_t height;
 } videoMemoryInfo;
 typedef struct i8080State {
+	// registers
 	uint8_t a;
 	uint8_t b;
 	uint8_t c;
@@ -89,17 +90,23 @@ typedef struct i8080State {
 	uint8_t l;
 	uint16_t sp;
 	uint16_t pc;
+	// memory
 	uint8_t* memory;
 	int memorySize;
+	// timing
 	float clockFreqMHz;
-	int mode;
 	int waitCycles;
+	//status
+	int mode;
+	char* statusString;
+	// structs
 	struct flagRegister f;
 	struct videoMemoryInfo vid;
+	// debug
 	unsigned long cyclesExecuted;
 	unsigned int opcodeUse[0x100];
 	prevInstruction previousInstructions[INSTRUCTION_TRACE_LEN];
-	char* statusString;
+	
 } i8080State;
 
 enum i8080Mode {
@@ -400,7 +407,22 @@ bool i8080_isZero(uint16_t n);
 bool i8080_isNegative(int16_t n);
 
 // Returns if the ac flag should be set
-bool i8080_shouldACFlag(uint8_t n);
+bool i8080_acFlagSetInc(uint8_t n);
+
+// Returns if the ac flag should be set
+bool i8080_acFlagSetDcr(uint8_t n);
+
+// Returns if the ac flag should be set
+bool i8080_acFlagSetAna(i8080State* state, uint8_t n);
+
+// Returns if the ac flag should be set
+bool i8080_acFlagSetCmp(i8080State* state, uint8_t n);
+
+// Returns if the ac flag should be set
+bool i8080_acFlagSetAdd(uint8_t n);
+
+// Returns if the ac flag should be set
+bool i8080_acFlagSetSub(uint8_t n);
 
 // Takes a 16bit value and converts to binary
 char* i8080_decToBin(uint16_t n);
@@ -409,4 +431,4 @@ char* i8080_decToBin(uint16_t n);
 const char* i8080_decompile(uint8_t opcode);
 
 // Triggers a breakpoint condition
-void breakpoint(i8080State* state);
+void breakpoint(i8080State* state, const char* reason);

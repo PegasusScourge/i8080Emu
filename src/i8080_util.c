@@ -321,11 +321,11 @@ void loadFile(const char* file, unsigned char* buffer, int bufferSize, int offse
 	fclose(f);
 }
 
-void breakpoint(i8080State* state) {
+void breakpoint(i8080State* state, const char* reason) {
 	if (state->mode != MODE_NORMAL)
 		return;
 	state->mode = MODE_PAUSED;
-	log_warn("BREAKPOINT TRIGGERED");
+	log_warn("BREAKPOINT TRIGGERED: %s", reason);
 }
 
 void i8080_stateCheck(i8080State* state) {
@@ -474,9 +474,31 @@ bool i8080_isNegative(int16_t n) {
 	return (0x80 == (n & 0x80));
 }
 
-bool i8080_shouldACFlag(uint8_t n) {
+bool i8080_acFlagSetAdd(uint8_t n) {
 	// Other possible implementation: ((c->a | val) & 0x08) != 0;
 	return (n & 0xF) == 0;
+}
+
+bool i8080_acFlagSetSub(uint8_t n) {
+	// Other possible implementation: ((c->a | val) & 0x08) != 0;
+	return !i8080_acFlagSetAdd(n);
+}
+
+bool i8080_acFlagSetInc(uint8_t n) {
+	return (n & 0xF) == 0;
+}
+
+bool i8080_acFlagSetDcr(uint8_t n) {
+	return !((n & 0xF) == 0xF);
+}
+
+bool i8080_acFlagSetAna(i8080State* state, uint8_t n) {
+	return ((state->a | n) & 0x08) != 0;
+}
+
+bool i8080_acFlagSetCmp(i8080State* state, uint8_t n) {
+	uint16_t result = state->a - n;
+	return ~(state->a ^ result ^ n) & 0x10;
 }
 
 char* i8080_decToBin(uint16_t n) {

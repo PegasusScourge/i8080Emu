@@ -34,8 +34,6 @@ void renderStateInfo(i8080State* state, float frameTimeMillis);
 void updateVideoBuffer(i8080State* state, sfImage* img);
 // Process the switches in the program args
 void processSwitches(i8080State* state, int argc, char** argv);
-// Check for interrupts
-void checkInterrupts(i8080State* state);
 
 // var defs
 sfRenderWindow* window = NULL; // window handle
@@ -46,10 +44,6 @@ sfImage* videoImg = NULL;
 
 bool shouldClose = false;
 bool showStats = false;
-
-// Interrupt vars
-int frame_interrupFreq = 17066;
-bool frameInterruptFlag = false;
 
 #define TEXT_SIZE 14
 
@@ -121,11 +115,8 @@ int main(int argc, char** argv) {
 		// Loop only if we are in normal mode
 		while (cyclesPerFrame > 0 && state.mode == MODE_NORMAL) {
 			i8080_cpuTick(&state);
-			checkInterrupts(&state);
 			cyclesPerFrame--;
 		}
-		
-		checkInterrupts(&state);
 		
 		// Update the video buffer
 		updateVideoBuffer(&state, videoImg);
@@ -179,21 +170,6 @@ int main(int argc, char** argv) {
 	fclose(logFile);
 
 	return 0;
-}
-
-void checkInterrupts(i8080State* state) {
-	// Only allow interrupts if we aren't halted or panicked 
-	if (state->cyclesExecuted % frame_interrupFreq == 0 && state->mode != MODE_HLT && state->mode != MODE_PANIC) {
-		// Trigger CPU interrupt
-		//log_trace("-- VBlank interrupt");
-		if (frameInterruptFlag) {
-			i8080op_executeInterrupt(state, INTERRUPT_1);
-		}
-		else {
-			i8080op_executeInterrupt(state, INTERRUPT_2);
-		}
-		frameInterruptFlag = !frameInterruptFlag;
-	}
 }
 
 void renderStateInfo(i8080State* state, float frameTimeMillis) {
@@ -392,20 +368,12 @@ void updateVideoBuffer(i8080State* state, sfImage* img) {
 	sfColor on = sfColor_fromRGB(255, 255, 255);
 	sfColor off = sfColor_fromRGB(0, 0, 0);
 
-	/*
-	for (int x = 0; x < state->vid.width; x++) {
-		for (int y = 0; y < state->vid.height; y++) {
-			uint8_t mVal = i8080op_readMemory(state, 52 + state->vid.startAddress + (x / 8) + (y * state->vid.width));
-			sfImage_setPixel(img, x, y, (mVal >> (x % 8)) & 0x1 ? on : off);
-		}
-	}
-	*/
 	for (int y = 0; y < state->vid.height; y++) {
-		for (int xByte = 0; xByte < 32; xByte++) {
-			uint8_t byte = i8080op_readMemory(state, state->vid.startAddress + xByte + (y * 32));
+		for (int xByte = 0; xByte < state->vid.width / 8; xByte++) {
+			uint8_t byte = i8080op_readMemory(state, state->vid.startAddress + xByte + (y * (state->vid.width / 8)));
 			for (int xBit = 0; xBit < 8; xBit++) {
-				unsigned int bit = byte >> (7 - xBit);
-				sfImage_setPixel(img, xByte * xBit, y, bit ? on : off);
+				unsigned int bit = byte >> (7 - xBit) & 1;
+				sfImage_setPixel(img, (xByte * 8) + (8 - xBit), y, bit ? on : off);
 			}
 		}
 	}
@@ -489,9 +457,12 @@ void initGraphics(unsigned int width, unsigned int height) {
 	videoImg = sfImage_create(width, height);
 	videoSprite = sfSprite_create();
 	sfVector2f pos;
-	pos.x = (((float)videoMode.width) / 2) - (((float)width) / 2);
-	pos.y = (((float)videoMode.height) / 2) - (((float)height) / 2);
+	pos.x = (((float)videoMode.width) / 2) - ((float)width);
+	pos.y = (((float)videoMode.height) / 2) + ((float)height);
 	sfSprite_setPosition(videoSprite, pos);
+	pos.x = 2; pos.y = 2;
+	sfSprite_setScale(videoSprite, pos);
+	sfSprite_setRotation(videoSprite, -90.0f);
 }
 
 void closeGraphics() {
@@ -519,7 +490,7 @@ void processSwitches(i8080State* state, int argc, char** argv) {
 				// attempt to load a file to a position
 				if ((i + 2) < argc) {
 					// There are enough arguments to support this switch
-					log_info("Loading file '%s' into memory index %s", argv[i + 1], argv[i + 2]);
+					log_info("Loading file '%s' into memory index %s(%04X)", argv[i + 1], argv[i + 2], atoi(argv[i + 2]));
 					loadFile(argv[i + 1], state->memory, i8080_MEMORY_SIZE, strtol(argv[i + 2], NULL, 10));
 				}
 				else {

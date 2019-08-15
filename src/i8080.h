@@ -19,6 +19,9 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode);
 // Outputs to the log that we have an unimplemented opcode
 void unimplementedOpcode(i8080State* state, uint8_t opcode);
 
+// Check for interrupts
+void checkInterrupts(i8080State* state);
+
 // Causes the processor to panic and halt execution immediately
 void i8080_panic(i8080State* state);
 
@@ -79,8 +82,8 @@ void i8080op_putDE16(i8080State* state, uint16_t);
 void i8080op_putHL8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
 void i8080op_i8080op_putHL16(i8080State* state, uint16_t);
 
-// Sets the Z, S, P, AC flags accordingly
-void i8080op_setZSPAC(i8080State* state, uint8_t v);
+// Sets the Z, S, P flags accordingly
+void i8080op_setZSP(i8080State* state, uint8_t v);
 
 // Uses an 8 bit var to reconstruct the flags
 void i8080op_putFlags(i8080State* state, uint8_t fv);
