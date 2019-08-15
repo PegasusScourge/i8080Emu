@@ -25,6 +25,8 @@ Utility functions and types
 #define PARAMS_BYTE_LEN 0
 #define PARAMS_CLOCK_LEN 1
 #define PARAMS_FCLOCK_LEN 2
+#define NUMBER_OF_PORTS 10
+#define BUFFERED_OUT_PORT_LEN 43
 
 // Error bit declarations
 #define ERRBIT_MEM_OUT_OF_BOUNDS_UNDERFLW		0b10000000
@@ -62,6 +64,10 @@ typedef struct prevInstruction {
 	unsigned long cycleNum;
 	char* statusString;
 } prevInstruction;
+
+typedef struct bufferedPort {
+	uint8_t buffer[BUFFERED_OUT_PORT_LEN];
+} bufferedPort;
 
 typedef struct flagRegister {
 	unsigned int s : 1; // sign flag
@@ -102,6 +108,9 @@ typedef struct i8080State {
 	// structs
 	struct flagRegister f;
 	struct videoMemoryInfo vid;
+	// ports
+	uint8_t inPorts[NUMBER_OF_PORTS];
+	bufferedPort outPorts[NUMBER_OF_PORTS];
 	// debug
 	unsigned long cyclesExecuted;
 	unsigned int opcodeUse[0x100];

@@ -62,28 +62,20 @@ int main(int argc, char** argv) {
 	log_set_level(LOG_INFO);
 
 	// Init the 8080
-	i8080State state;
-	init8080(&state);
+	i8080State* state = malloc(sizeof(i8080State));
+	if (state == NULL) {
+		log_fatal("Failed to allocate space for i8080 state");
+	}
+
+	init8080(state);
 	
-	processSwitches(&state, argc, argv);
+	processSwitches(state, argc, argv);
 
 	// Init the graphics
 	log_info("--- Init graphics ---");
-	log_info("videoMemory: %04X, dimensions (%i, %i)", state.vid.startAddress, state.vid.width, state.vid.height);
-	initGraphics(state.vid.width, state.vid.height);
+	log_info("videoMemory: %04X, dimensions (%i, %i)", state->vid.startAddress, state->vid.width, state->vid.height);
+	initGraphics(state->vid.width, state->vid.height);
 	log_info("-- Graphics init complete ---");
-
-	//log_info("Injecting...");
-	// Inject code to perform the text output functions
-	// inject "out 1,a" at 0x0000 (signal to stop the test)
-	//memory[0x0000] = 0xD3;
-	//memory[0x0001] = 0x00;
-
-	// inject "in a,0" at 0x0005 (signal to output some characters)
-	//i8080op_writeMemory(&state, 0x05, 0xDB); //memory[0x0005] = 0xDB;
-	//i8080op_writeMemory(&state, 0x06, 0x00); //memory[0x0006] = 0x00;
-	//i8080op_writeMemory(&state, 0x07, 0xC9); //memory[0x0007] = 0xC9;
-	//state.pc = 0x100;
 
 	// Create the timer
 	sfClock* timer = sfClock_create();
@@ -93,16 +85,19 @@ int main(int argc, char** argv) {
 	float elapsedTime = 0;
 	float cycle_accumulator = 0;
 
-	log_info("Initial pc: %04X", state.pc);
-	state.mode = MODE_PAUSED;
+	log_info("Initial pc: %04X", state->pc);
+	state->mode = MODE_PAUSED;
+
+	// Set the inPort values needed
+	state->inPorts[1] = 0x1;
 
 	// Do emulation
 	while (!shouldClose) {
 		// check events
 		while (sfRenderWindow_pollEvent(window, &cEvent)) {
-			handleEvent(&cEvent, &state);
+			handleEvent(&cEvent, state);
 		}
-		pollInput(&state);
+		pollInput(state);
 
 		// Calculate the time passed since the last loop
 		time = sfClock_getElapsedTime(timer);
@@ -110,18 +105,18 @@ int main(int argc, char** argv) {
 		elapsedTime = (float)sfTime_asMicroseconds(time) / 1000.0f;
 		cycle_accumulator += elapsedTime;
 
-		unsigned long cyclesPerFrame = state.clockFreqMHz * MHZ * (elapsedTime / 1000.0f);
+		unsigned long cyclesPerFrame = state->clockFreqMHz * MHZ * (elapsedTime / 1000.0f);
 		
 		// Loop only if we are in normal mode
-		while (cyclesPerFrame > 0 && state.mode == MODE_NORMAL) {
-			i8080_cpuTick(&state);
+		while (cyclesPerFrame > 0 && state->mode == MODE_NORMAL) {
+			i8080_cpuTick(state);
 			cyclesPerFrame--;
 		}
 		
 		// Update the video buffer
-		updateVideoBuffer(&state, videoImg);
+		updateVideoBuffer(state, videoImg);
 
-		if(state.mode != MODE_PANIC)
+		if(state->mode != MODE_PANIC)
 			sfRenderWindow_clear(window, sfColor_fromRGB(0, 0, 100));
 		else
 			sfRenderWindow_clear(window, sfColor_fromRGB(100, 10, 10));
@@ -132,7 +127,7 @@ int main(int argc, char** argv) {
 		sfRenderWindow_drawSprite(window, videoSprite, NULL);
 		sfTexture_destroy(videoTexture);
 
-		renderStateInfo(&state, elapsedTime);
+		renderStateInfo(state, elapsedTime);
 
 		// Display the window
 		sfRenderWindow_display(window);
@@ -147,7 +142,7 @@ int main(int argc, char** argv) {
 		int codesUsed = 0;
 		fprintf(fp, "Opcode use table\n------------------------------------------\n");
 		for (int i = 0; i < 0x100; i++) {
-			if (state.opcodeUse[i] == 1) {
+			if (state->opcodeUse[i] == 1) {
 				fprintf(fp, "%02X: %s\n", i, i8080_decompile(i));
 				codesUsed++;
 			}
@@ -164,7 +159,8 @@ int main(int argc, char** argv) {
 	closeGraphics();
 
 	// Free the memory
-	free(state.memory);
+	free(state->memory);
+	free(state);
 
 	// Close the log file
 	fclose(logFile);
@@ -191,9 +187,10 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	int xSpace = TEXT_SIZE * 14;
 
 	pos.x = 16;
-	pos.y = 550;
+	pos.y = 525;
 	sfText_setString(renderText, "[ESC] exit, [BACKSPACE] HLT, [P] pause, [O] normal, [S] step, [F1] debug dump, [F2] show stats, [SHIFT+F2] hide stats"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
-	sfText_setString(renderText, "Current mode:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+	sfText_setString(renderText, ""); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+	sfText_setString(renderText, "Current mode:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 1.5;
 	sfText_setString(renderText, getModeStr(state->mode)); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
 
 	if(showStats) {
@@ -361,6 +358,17 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 			sprintf(buf, "{-%i}[PC:%04X] %s(%02X) (TS:%04X) B1:%02X B2:%02X", i, state->previousInstructions[i].pc, state->previousInstructions[i].statusString, state->previousInstructions[i].opcode, state->previousInstructions[i].topStack, state->previousInstructions[i].b1, state->previousInstructions[i].b2);
 			sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
 			pos.y += incY;
+		}
+
+		pos.y += incY * 2;
+		pos.x = X_POS_INST_TRC_COL;
+
+		sfText_setString(renderText, "Out ports:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+		pos.y += incY;
+		for (int i = 0; i < NUMBER_OF_PORTS; i++) {
+			_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 4;
+			sfText_setString(renderText, state->outPorts[i].buffer); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+			pos.y += incY; pos.x = X_POS_INST_TRC_COL;
 		}
 	}
 

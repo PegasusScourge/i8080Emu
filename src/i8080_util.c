@@ -402,6 +402,17 @@ void reset8080(i8080State* state) {
 		state->previousInstructions[i].statusString = "NOP";
 		state->previousInstructions[i].topStack = 0;
 	}
+
+	// Reset the ports
+	for (int i = 0; i < NUMBER_OF_PORTS; i++) {
+		state->inPorts[i] = 0;
+		// Buffered port
+		for (int y = 0; y < BUFFERED_OUT_PORT_LEN; y++) {
+			state->outPorts[i].buffer[y] = 0;
+			if(y == BUFFERED_OUT_PORT_LEN - 1)
+				state->outPorts[i].buffer[y] = '\0';
+		}
+	}
 }
 
 int getConsoleLine(char* buf, int bufLen) {

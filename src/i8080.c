@@ -194,22 +194,24 @@ uint16_t i8080op_popStack(i8080State* state) {
 }
 
 uint8_t port_in(i8080State* state, uint8_t port) {
-
-	//log_info("[%04X] IN(%02X) port==%i", state->pc, IN, port);
-
-	if (port == 1) {
-		return 0x01;
-	}
-	else if (port == 2) {
-		return 0x00;
+	if (port < 0 || port > NUMBER_OF_PORTS) {
+		log_warn("Attempted read of non-existant port %02X", port);
+		return 0;
 	}
 
-	// If we don't understand, just return 0
-	return 0x00;
+	return state->inPorts[port];
 }
 
 void port_out(i8080State* state, uint8_t port, uint8_t value) {
-	//log_info("[%04X] OUT(%02X) port==%i w/val %i / %02X / '%c'", state->pc, OUT, port, value, value, value);
+	if (port < 0 || port > NUMBER_OF_PORTS) {
+		log_warn("Attempted write of non-existant port %02X", port);
+		return;
+	}
+
+	for (int y = 0; y < BUFFERED_OUT_PORT_LEN - 1; y++) {
+		state->outPorts[port].buffer[y] = state->outPorts[port].buffer[y + 1];
+	}
+	state->outPorts[port].buffer[BUFFERED_OUT_PORT_LEN - 1] = 'a' + value;
 }
 
 void i8080op_executeRET(i8080State* state) {
