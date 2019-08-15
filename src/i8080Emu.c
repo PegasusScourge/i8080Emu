@@ -180,7 +180,10 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 	}
 	sfText_setCharacterSize(renderText, TEXT_SIZE);
 	sfText_setFont(renderText, font);
-	sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+	sfColor normalC = sfColor_fromRGB(0, 255, 200);
+	sfText_setFillColor(renderText, normalC);
+	sfText_setOutlineColor(renderText, sfColor_fromRGB(0, 0, 0));
+	sfText_setOutlineThickness(renderText, 2.0f);
 
 	// Do the state rendering
 	sfVector2f pos;
@@ -289,7 +292,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 					sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the current PC in red
 				}
 				else {
-					sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+					sfText_setFillColor(renderText, normalC);
 				}
 
 				_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
@@ -310,7 +313,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 					sfText_setFillColor(renderText, sfColor_fromRGB(255, 0, 0)); // Highlight the top of the stack in red
 				}
 				else {
-					sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+					sfText_setFillColor(renderText, normalC);
 				}
 
 				_itoa(i, buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 2;
@@ -346,7 +349,7 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 		pos.x = X_POS_INST_TRC_COL;
 		pos.y = TEXT_SIZE + 4;
 
-		sfText_setFillColor(renderText, sfColor_fromRGB(255, 255, 255));
+		sfText_setFillColor(renderText, normalC);
 		//sfText_setCharacterSize(renderText, 12);
 
 		sfText_setString(renderText, "Instruction trace:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
