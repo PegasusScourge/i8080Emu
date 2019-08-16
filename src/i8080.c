@@ -998,48 +998,56 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] ANA_B(%02X)", state->pc, ANA_B);
 		i8080_acFlagSetAna(state, state->b);
 		state->a = state->a & state->b;
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case ANA_C:
 		log_trace("[%04X] ANA_C(%02X)", state->pc, ANA_C);
 		i8080_acFlagSetAna(state, state->c);
 		state->a = state->a & state->c;
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case ANA_D:
 		log_trace("[%04X] ANA_D(%02X)", state->pc, ANA_D);
 		i8080_acFlagSetAna(state, state->d);
 		state->a = state->a & state->d;
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case ANA_E:
 		log_trace("[%04X] ANA_E(%02X)", state->pc, ANA_E);
 		i8080_acFlagSetAna(state, state->e);
 		state->a = state->a & state->e;
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case ANA_H:
 		log_trace("[%04X] ANA_H(%02X)", state->pc, ANA_H);
 		i8080_acFlagSetAna(state, state->h);
 		state->a = state->a & state->h;
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case ANA_L:
 		log_trace("[%04X] ANA_L(%02X)", state->pc, ANA_L);
 		i8080_acFlagSetAna(state, state->l);
 		state->a = state->a & state->l;
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case ANA_M:
 		log_trace("[%04X] ANA_L(%02X)", state->pc, ANA_M);
 		i8080_acFlagSetAna(state, i8080op_readMemory(state, i8080op_getHL(state)));
 		state->a = state->a & i8080op_readMemory(state, i8080op_getHL(state));
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case ANA_A:
 		log_trace("[%04X] ANA_A(%02X)", state->pc, ANA_A);
 		i8080_acFlagSetAna(state, state->a);
 		state->a = state->a & state->a;
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case XRA_B:
@@ -1395,6 +1403,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] ANI(%02X) %02X", state->pc, ANI, byte1);
 		i8080_acFlagSetAna(state, byte1);
 		state->a = state->a & byte1;
+		state->f.c = 0;
 		i8080op_setZSP(state, state->a);
 		break;
 	case RST_4:
@@ -1441,6 +1450,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 	case XRI:
 		log_trace("[%04X] XRI(%02X) %02X", state->pc, XRI, byte1);
 		state->a = state->a ^ byte1;
+		state->f.c = 0;
 		state->f.ac = 0;i8080op_setZSP(state, state->a);
 		break;
 	case RST_5:
@@ -1490,6 +1500,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 	case ORI:
 		log_trace("[%04X] ORI(%02X) %02X", state->pc, ORI, byte1);
 		state->a = state->a | byte1;
+		state->f.c = 0;
 		state->f.ac = 0;i8080op_setZSP(state, state->a);
 	case RST_6:
 		log_trace("[%04X] RST_6(%02X)", state->pc, RST_6);

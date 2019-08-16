@@ -675,6 +675,173 @@ void i8080_testProtocol(i8080State* state) {
 	success = state->a == 0xFF && state->f.c == 1 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
 	fprintf(testLog, "Test SBB_M\t(%02X)\t\t: [%s]\n", SBB_M, success ? "OK" : "FAIL"); // Print the result of the test
 
+	// ANA testing
+	utilTest_prepNext(state, ANA_B, 0x00, 0x00); state->a = 0xFF; state->b = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANA_B\t(%02X)\t\t: [%s]\n", ANA_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ANA_C, 0x00, 0x00); state->a = 0xFF; state->c = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANA_C\t(%02X)\t\t: [%s]\n", ANA_C, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ANA_D, 0x00, 0x00); state->a = 0xFF; state->d = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANA_D\t(%02X)\t\t: [%s]\n", ANA_D, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ANA_E, 0x00, 0x00); state->a = 0xFF; state->e = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANA_E\t(%02X)\t\t: [%s]\n", ANA_E, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ANA_H, 0x00, 0x00); state->a = 0xFF; state->h = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANA_H\t(%02X)\t\t: [%s]\n", ANA_H, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ANA_L, 0x00, 0x00); state->a = 0xFF; state->l = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANA_L\t(%02X)\t\t: [%s]\n", ANA_L, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ANA_A, 0x00, 0x00); state->a = 0xFF; state->a = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANA_A\t(%02X)\t\t: [%s]\n", ANA_A, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ANA_M, 0x00, 0x00); state->a = 0xFF; i8080op_putHL16(state, 0x00AA); i8080op_writeMemory(state, 0x00AA, 0x0F); i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANA_M\t(%02X)\t\t: [%s]\n", ANA_M, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// XRA testing
+	utilTest_prepNext(state, XRA_B, 0x00, 0x00); state->a = 0xFF; state->b = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0xF0 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRA_B\t(%02X)\t\t: [%s]\n", XRA_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, XRA_C, 0x00, 0x00); state->a = 0xFF; state->c = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0xF0 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRA_C\t(%02X)\t\t: [%s]\n", XRA_C, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, XRA_D, 0x00, 0x00); state->a = 0xFF; state->d = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0xF0 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRA_D\t(%02X)\t\t: [%s]\n", XRA_D, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, XRA_E, 0x00, 0x00); state->a = 0xFF; state->b = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0xF0 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRA_B\t(%02X)\t\t: [%s]\n", XRA_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, XRA_H, 0x00, 0x00); state->a = 0xFF; state->h = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0xF0 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRA_H\t(%02X)\t\t: [%s]\n", XRA_H, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, XRA_L, 0x00, 0x00); state->a = 0xFF; state->l = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0xF0 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRA_L\t(%02X)\t\t: [%s]\n", XRA_L, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, XRA_A, 0x00, 0x00); state->a = 0xFF; i8080_cpuTick(state);
+	success = state->a == 0x00 && state->f.c == 0 && state->f.z == 1 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRA_B\t(%02X)\t\t: [%s]\n", XRA_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, XRA_M, 0x00, 0x00); state->a = 0xFF; i8080op_putHL16(state, 0x00AA); i8080op_writeMemory(state, 0x00AA, 0x0F); i8080_cpuTick(state);
+	success = state->a == 0xF0 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRA_M\t(%02X)\t\t: [%s]\n", XRA_M, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// ORA testing
+	utilTest_prepNext(state, ORA_B, 0x00, 0x00); state->a = 0x10; state->b = 0x0C; i8080_cpuTick(state);
+	success = state->a == 0x1C && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORA_B\t(%02X)\t\t: [%s]\n", ORA_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ORA_C, 0x00, 0x00); state->a = 0x10; state->c = 0x0C; i8080_cpuTick(state);
+	success = state->a == 0x1C && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORA_C\t(%02X)\t\t: [%s]\n", ORA_C, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ORA_D, 0x00, 0x00); state->a = 0x10; state->d = 0x0C; i8080_cpuTick(state);
+	success = state->a == 0x1C && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORA_D\t(%02X)\t\t: [%s]\n", ORA_D, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ORA_E, 0x00, 0x00); state->a = 0x10; state->e = 0x0C; i8080_cpuTick(state);
+	success = state->a == 0x1C && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORA_E\t(%02X)\t\t: [%s]\n", ORA_E, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ORA_H, 0x00, 0x00); state->a = 0x10; state->h = 0x0C; i8080_cpuTick(state);
+	success = state->a == 0x1C && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORA_H\t(%02X)\t\t: [%s]\n", ORA_H, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ORA_L, 0x00, 0x00); state->a = 0x10; state->l = 0x0C; i8080_cpuTick(state);
+	success = state->a == 0x1C && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORA_L\t(%02X)\t\t: [%s]\n", ORA_L, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ORA_A, 0x00, 0x00); state->a = 0x0F; i8080_cpuTick(state);
+	success = state->a == 0x0F && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORA_A\t(%02X)\t\t: [%s]\n", ORA_A, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, ORA_M, 0x00, 0x00); state->a = 0x10; i8080op_putHL16(state, 0x00AA); i8080op_writeMemory(state, 0x00AA, 0x0C); i8080_cpuTick(state);
+	success = state->a == 0x1C && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORA_M\t(%02X)\t\t: [%s]\n", ORA_M, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// CMP testing
+	utilTest_prepNext(state, CMP_B, 0x00, 0x00); state->a = 0x10; state->b = 0x10; i8080_cpuTick(state);
+	success = state->f.c == 0 && state->f.z == 1 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMP_B\t(%02X)\t\t: [%s]\n", CMP_B, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, CMP_C, 0x00, 0x00); state->a = 0x10; state->c = 0x10; i8080_cpuTick(state);
+	success = state->f.c == 0 && state->f.z == 1 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMP_C\t(%02X)\t\t: [%s]\n", CMP_C, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, CMP_D, 0x00, 0x00); state->a = 0x10; state->d = 0x10; i8080_cpuTick(state);
+	success = state->f.c == 0 && state->f.z == 1 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMP_D\t(%02X)\t\t: [%s]\n", CMP_D, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, CMP_E, 0x00, 0x00); state->a = 0x10; state->e = 0x11; i8080_cpuTick(state);
+	success = state->f.c == 1 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMP_E\t(%02X)\t\t: [%s]\n", CMP_E, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, CMP_H, 0x00, 0x00); state->a = 0x10; state->h = 0x11; i8080_cpuTick(state);
+	success = state->f.c == 1 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMP_H\t(%02X)\t\t: [%s]\n", CMP_H, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, CMP_L, 0x00, 0x00); state->a = 0x10; state->l = 0x11; i8080_cpuTick(state);
+	success = state->f.c == 1 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMP_L\t(%02X)\t\t: [%s]\n", CMP_L, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, CMP_A, 0x00, 0x00); state->a = 0x10; i8080_cpuTick(state);
+	success = state->f.c == 0 && state->f.z == 1 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMP_A\t(%02X)\t\t: [%s]\n", CMP_A, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, CMP_M, 0x00, 0x00); state->a = 0x10; i8080op_putHL16(state, 0x00AA); i8080op_writeMemory(state, 0x00AA, 0x11);  i8080_cpuTick(state);
+	success = state->f.c == 1 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test CMP_M\t(%02X)\t\t: [%s]\n", CMP_M, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// ADI test
+	utilTest_prepNext(state, ADI, 0x01, 0x00); state->a = 0x10; i8080_cpuTick(state);
+	success = state->a == 0x11 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ADI\t(%02X)\t\t: [%s]\n", ADI, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// ACI test
+	utilTest_prepNext(state, ACI, 0x01, 0x00); state->a = 0x10; state->f.c = 1; i8080_cpuTick(state);
+	success = state->a == 0x12 && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ACI\t(%02X)\t\t: [%s]\n", ACI, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// SUI test
+	utilTest_prepNext(state, SUI, 0xFF, 0x00); state->a = 0xFE; i8080_cpuTick(state);
+	success = state->a == 0xFF && state->f.c == 1 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test SUI\t(%02X)\t\t: [%s]\n", SUI, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// SBI test
+	utilTest_prepNext(state, SBI, 0xFF, 0x00); state->a = 0xFE; state->f.c = 1; i8080_cpuTick(state);
+	success = state->a == 0xFE && state->f.c == 1 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test SBI\t(%02X)\t\t: [%s]\n", SBI, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// ANI test
+	utilTest_prepNext(state, ANI, 0x01, 0x00); state->a = 0xFF; i8080_cpuTick(state);
+	success = state->a == 0x01 && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ANI\t(%02X)\t\t: [%s]\n", ANI, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// XRI test
+	utilTest_prepNext(state, XRI, 0x18, 0x00); state->a = 0x08; i8080_cpuTick(state);
+	success = state->a == 0x10 && state->f.c == 0 && state->f.z == 0 && state->f.p == 0; if (!success) { failedTests++; }
+	fprintf(testLog, "Test XRI\t(%02X)\t\t: [%s]\n", XRI, success ? "OK" : "FAIL"); // Print the result of the test
+
+	// ORI test
+	utilTest_prepNext(state, ORI, 0x0F, 0x00); state->a = 0xF0; i8080_cpuTick(state);
+	success = state->a == 0xFF && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
+	fprintf(testLog, "Test ORI\t(%02X)\t\t: [%s]\n", ORI, success ? "OK" : "FAIL"); // Print the result of the test
+	
 	// Output statistics
 	float elapsedTimeMs = sfTime_asMilliseconds(sfClock_getElapsedTime(timer));
 	float elapsedTimeSec = elapsedTimeMs / 1000.0f;
