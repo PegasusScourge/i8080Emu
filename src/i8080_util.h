@@ -126,7 +126,8 @@ enum i8080Mode {
 	MODE_NORMAL,
 	MODE_PAUSED,
 	MODE_HLT,
-	MODE_PANIC
+	MODE_PANIC,
+	MODE_TEST
 };
 
 enum i8080Opcode {

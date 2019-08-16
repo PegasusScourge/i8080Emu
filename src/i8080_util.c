@@ -272,6 +272,7 @@ const char* i8080_decompile(uint8_t opcode) {
 	case CPI: return "CPI"; break;
 	case RST_7: return "RST 7"; break;
 	case JM: return "JM"; break;
+	case DCR_A: return "DCR A"; break;
 	}
 	return "unknown";
 }
@@ -471,12 +472,16 @@ uint8_t i8080_getFailedInstructionClockCycles(uint8_t opcode) {
 }
 
 bool i8080_isParityEven(uint16_t n) {
-	int numOneBits = 0;
+	if (n == 0)
+		return 0; // 0 number has 0 parity
+
+	unsigned int numOneBits = 0;
 	for (int i = 0; i < 16; i++) {
-		uint16_t v = (n >> i) & 0b0000000000000001;
-		numOneBits += v;
+		uint16_t v = (n >> i) & 1;
+		if(v == 1)
+			numOneBits += 1;
 	}
-	//log_trace("numOneBits = %i", numOneBits);
+	log_debug("numOneBits: %i, value: %04X", numOneBits, n);
 	if (numOneBits % 2 == 0) { // If even, return true
 		return 1;
 	}
