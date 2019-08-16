@@ -271,6 +271,7 @@ const char* i8080_decompile(uint8_t opcode) {
 	case CM: return "CM"; break;
 	case CPI: return "CPI"; break;
 	case RST_7: return "RST 7"; break;
+	case JM: return "JM"; break;
 	}
 	return "unknown";
 }
@@ -407,6 +408,8 @@ void reset8080(i8080State* state) {
 	for (int i = 0; i < NUMBER_OF_PORTS; i++) {
 		state->inPorts[i] = 0;
 		// Buffered port
+		state->outPorts[i].val = 0;
+		state->outPorts[i].portFilled = false;
 		for (int y = 0; y < BUFFERED_OUT_PORT_LEN; y++) {
 			state->outPorts[i].buffer[y] = 0;
 			if(y == BUFFERED_OUT_PORT_LEN - 1)
@@ -485,31 +488,32 @@ bool i8080_isNegative(int16_t n) {
 	return (0x80 == (n & 0x80));
 }
 
-bool i8080_acFlagSetAdd(uint8_t n) {
+void i8080_acFlagSetAdd(i8080State* state, uint8_t n) {
 	// Other possible implementation: ((c->a | val) & 0x08) != 0;
-	return (n & 0xF) == 0;
+	state->f.ac = (n & 0xF) == 0;
 }
 
-bool i8080_acFlagSetSub(uint8_t n) {
+void i8080_acFlagSetSub(i8080State* state, uint8_t n) {
 	// Other possible implementation: ((c->a | val) & 0x08) != 0;
-	return !i8080_acFlagSetAdd(n);
+	i8080_acFlagSetAdd(state, n);
+	state->f.ac = !state->f.ac;
 }
 
-bool i8080_acFlagSetInc(uint8_t n) {
-	return (n & 0xF) == 0;
+void i8080_acFlagSetInc(i8080State* state, uint8_t n) {
+	state->f.ac = (n & 0xF) == 0;
 }
 
-bool i8080_acFlagSetDcr(uint8_t n) {
-	return !((n & 0xF) == 0xF);
+void i8080_acFlagSetDcr(i8080State* state, uint8_t n) {
+	state->f.ac = !((n & 0xF) == 0xF);
 }
 
-bool i8080_acFlagSetAna(i8080State* state, uint8_t n) {
-	return ((state->a | n) & 0x08) != 0;
+void i8080_acFlagSetAna(i8080State* state, uint8_t n) {
+	state->f.ac = ((state->a | n) & 0x08) != 0;
 }
 
-bool i8080_acFlagSetCmp(i8080State* state, uint8_t n) {
+void i8080_acFlagSetCmp(i8080State* state, uint8_t n) {
 	uint16_t result = state->a - n;
-	return ~(state->a ^ result ^ n) & 0x10;
+	state->f.ac = ~(state->a ^ result ^ n) & 0x10;
 }
 
 char* i8080_decToBin(uint16_t n) {

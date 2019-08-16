@@ -66,6 +66,8 @@ typedef struct prevInstruction {
 } prevInstruction;
 
 typedef struct bufferedPort {
+	uint8_t val;
+	bool portFilled;
 	uint8_t buffer[BUFFERED_OUT_PORT_LEN];
 } bufferedPort;
 
@@ -79,6 +81,8 @@ typedef struct flagRegister {
 	unsigned int one : 1; // always one, bit 1
 	unsigned int ien : 1; // Is the interrupt system enabled?
 	unsigned int isi; // Are we currently interrupted?
+	unsigned int rx : 1; // Are we reading this tick?
+	unsigned int tx : 1; // are we transmitting this tick?
 } flagRegister;
 typedef struct videoMemoryInfo {
 	uint16_t startAddress;
@@ -416,22 +420,22 @@ bool i8080_isZero(uint16_t n);
 bool i8080_isNegative(int16_t n);
 
 // Returns if the ac flag should be set
-bool i8080_acFlagSetInc(uint8_t n);
+void i8080_acFlagSetInc(i8080State* state, uint8_t n);
 
 // Returns if the ac flag should be set
-bool i8080_acFlagSetDcr(uint8_t n);
+void i8080_acFlagSetDcr(i8080State* state, uint8_t n);
 
 // Returns if the ac flag should be set
-bool i8080_acFlagSetAna(i8080State* state, uint8_t n);
+void i8080_acFlagSetAna(i8080State* state, uint8_t n);
 
 // Returns if the ac flag should be set
-bool i8080_acFlagSetCmp(i8080State* state, uint8_t n);
+void i8080_acFlagSetCmp(i8080State* state, uint8_t n);
 
 // Returns if the ac flag should be set
-bool i8080_acFlagSetAdd(uint8_t n);
+void i8080_acFlagSetAdd(i8080State* state, uint8_t n);
 
 // Returns if the ac flag should be set
-bool i8080_acFlagSetSub(uint8_t n);
+void i8080_acFlagSetSub(i8080State* state, uint8_t n);
 
 // Takes a 16bit value and converts to binary
 char* i8080_decToBin(uint16_t n);

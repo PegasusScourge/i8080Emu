@@ -34,6 +34,8 @@ void renderStateInfo(i8080State* state, float frameTimeMillis);
 void updateVideoBuffer(i8080State* state, sfImage* img);
 // Process the switches in the program args
 void processSwitches(i8080State* state, int argc, char** argv);
+// Processes the external shift register
+void processExternShiftRegister(i8080State* state);
 
 // var defs
 sfRenderWindow* window = NULL; // window handle
@@ -41,6 +43,10 @@ sfEvent cEvent; // Event container
 sfFont* font = NULL;
 sfSprite* videoSprite = NULL;
 sfImage* videoImg = NULL;
+
+uint8_t shift0 = 0;
+uint8_t shift1 = 0;
+uint8_t shiftOffset = 0;
 
 bool shouldClose = false;
 bool showStats = false;
@@ -89,7 +95,8 @@ int main(int argc, char** argv) {
 	state->mode = MODE_PAUSED;
 
 	// Set the inPort values needed
-	state->inPorts[1] = 0x1;
+	state->inPorts[1] = 0x00;
+	state->inPorts[2] = 0x80;
 
 	// Do emulation
 	while (!shouldClose) {
@@ -112,6 +119,9 @@ int main(int argc, char** argv) {
 			i8080_cpuTick(state);
 			cyclesPerFrame--;
 		}
+
+		// Process the shift register specific to space invaders
+		processExternShiftRegister(state);
 		
 		// Update the video buffer
 		updateVideoBuffer(state, videoImg);
@@ -277,6 +287,10 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 		_itoa(state->vid.width, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace / 4;
 		_itoa(state->vid.height, buf, 10); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
 
+		pos.y += incY;
+		sfText_setString(renderText, "Extern shift reg:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += xSpace;
+		_itoa(state->inPorts[3], buf, 16); sfText_setString(renderText, buf); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY; pos.x = X_INIT_POS;
+
 		#define X_POS_MEM_COL 400
 		pos.x = X_POS_MEM_COL;
 		pos.y = TEXT_SIZE + 4;
@@ -297,6 +311,19 @@ void renderStateInfo(i8080State* state, float frameTimeMillis) {
 			}
 			pos.y += incY;
 		}
+
+		pos.x = X_POS_MEM_COL;
+		pos.y += incY * 2;
+
+		sfColor activeGreen = sfColor_fromRGB(50, 255, 50);
+		sfColor inactiveRed = sfColor_fromRGB(100, 0, 0);
+		sfText_setFillColor(renderText, normalC);
+		sfText_setString(renderText, "Port status:"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.y += incY;
+		sfText_setFillColor(renderText, state->f.rx ? activeGreen : inactiveRed);
+		sfText_setString(renderText, "RX"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL); pos.x += (TEXT_SIZE * 1.5f) + 4;
+		sfText_setFillColor(renderText, state->f.tx ? activeGreen : inactiveRed);
+		sfText_setString(renderText, "TX"); sfText_setPosition(renderText, pos); sfRenderWindow_drawText(window, renderText, NULL);
+		sfText_setFillColor(renderText, normalC);
 
 		#define X_POS_STACK_COL 550
 		pos.x = X_POS_STACK_COL;
@@ -388,6 +415,23 @@ void updateVideoBuffer(i8080State* state, sfImage* img) {
 			}
 		}
 	}
+}
+
+void processExternShiftRegister(i8080State* state) {
+	// Get the value from the shift offset select
+	if (state->outPorts[2].portFilled == true) {
+		state->outPorts[2].portFilled = false;
+		shiftOffset = state->outPorts[2].val & 0x7;
+	}
+	// Get the shift register input
+	if (state->outPorts[4].portFilled == true) {
+		state->outPorts[4].portFilled = false;
+		shift0 = shift1;
+		shift1 = state->outPorts[4].val;
+	}
+	// Output the value to the in port
+	uint16_t v = (shift1 << 8) | shift0;
+	state->inPorts[3] = ((v >> (8 - shiftOffset)) & 0xff);
 }
 
 void handleEvent(const sfEvent* evt, i8080State* state) {
