@@ -477,7 +477,13 @@ bool i8080_isParityEven(uint16_t n) {
 		numOneBits += v;
 	}
 	//log_trace("numOneBits = %i", numOneBits);
-	return numOneBits % 2 == 0; // If even, return true
+	if (numOneBits % 2 == 0) { // If even, return true
+		return 1;
+	}
+	else {
+		return 0;
+	}
+	return 0;
 }
 
 bool i8080_isZero(uint16_t n) {

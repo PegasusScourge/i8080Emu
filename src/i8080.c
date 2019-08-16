@@ -7,7 +7,7 @@ CPU file
 */
 #include "i8080.h"
 
-#define CPUDIAG
+//#define CPUDIAG
 
 // Interrupt vars
 unsigned int frame_interrupFreq = 17066;
@@ -141,20 +141,20 @@ uint8_t i8080op_readMemory(i8080State* state, uint16_t index) {
 void i8080op_writeMemory(i8080State* state, uint16_t index, uint8_t val) {
 	// The bounds checking function raises any necessary flags in case of error
 	if (i8080_boundsCheckMemIndex(state, index)) {
-		//if (index < 0x2000) {
-		//	log_warn("Memory write of value %02X at %04X attempted: allowed", val, index);
-			//log_error("Memory write of value %02X at %04X attempted: blocked", val, index);
-			//return;
+		if (index < 0x2000) {
+			//log_warn("Memory write of value %02X at %04X attempted: allowed", val, index);
+			log_error("Memory write of value %02X at %04X attempted: blocked", val, index);
+			return;
 			//i8080_dump(state);
 			//breakpoint(state, "write memory under 0x2000"); // pause here to inspect state
-		//}
+		}
 		
-		//if (index > 0x3fff) {
-		//	uint16_t prevIndex = index;
-		//	while (index > 0x3fff)
-		//		index -= 0x2000;
-		//	log_warn("Memory write of value %02X at %04X attempted, corrected to %04X", val, prevIndex, index);
-		//}
+		if (index > 0x3fff) {
+			uint16_t prevIndex = index;
+			while (index > 0x3fff)
+				index -= 0x2000;
+			log_warn("Memory write of value %02X at %04X attempted, corrected to %04X", val, prevIndex, index);
+		}
 
 		//if (index == 0x20CB) {
 		//	char buf[40];
@@ -348,7 +348,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case DAD_B: // HL += BC
 		log_trace("[%04X] DAD_B(%02X) %04X", state->pc, DAD_B, i8080op_getBC(state));
-		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getBC(state)));
+		i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getBC(state)));
 		break;
 	case LDAX_B: // Load memory pointed to by BC into A
 		log_trace("[%04X] LDAX_B(%02X) %02X", state->pc, LDAX_B, i8080op_readMemory(state, i8080op_getBC(state)));
@@ -410,7 +410,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case DAD_D: // HL += DE
 		log_trace("[%04X] DAD_D(%02X) %04X", state->pc, DAD_D, i8080op_getDE(state));
-		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getDE(state)));
+		i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getDE(state)));
 		break;
 	case LDAX_D: // Load memory pointed to by DE into A
 		log_trace("[%04X] LDAX_D(%02X) %02X", state->pc, LDAX_D, i8080op_readMemory(state, i8080op_getDE(state)));
@@ -453,7 +453,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case INX_H: // Increment HL
 		log_trace("[%04X] INX_H(%02X)", state->pc, INX_H);
-		i8080op_i8080op_putHL16(state, 1 + i8080op_getHL(state));
+		i8080op_putHL16(state, 1 + i8080op_getHL(state));
 		break;
 	case INR_H: // Increment H
 		log_trace("[%04X] INR_H(%02X)", state->pc, INR_H);
@@ -480,7 +480,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case DAD_H: // HL += HL
 		log_trace("[%04X] DAD_H(%02X) %04X", state->pc, DAD_H, i8080op_getHL(state));
-		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getHL(state)));
+		i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), i8080op_getHL(state)));
 		break;
 	case LHLD: // Load L with memory[store16_1] and H with memory[store16_1 + 1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
@@ -490,7 +490,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case DCX_H: // Decrement HL by 1
 		log_trace("[%04X] DCX_H(%02X) %04X", state->pc, DCX_H, i8080op_getHL(state));
-		i8080op_i8080op_putHL16(state, i8080op_getHL(state) - 1);
+		i8080op_putHL16(state, i8080op_getHL(state) - 1);
 		break;
 	case INR_L: // Increment L by 1
 		log_trace("[%04X] INR_L(%02X) %02X", state->pc, INR_L, state->e);
@@ -548,7 +548,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case DAD_SP: // HL += SP
 		log_trace("[%04X] DAD_SP(%02X) %04X", state->pc, DAD_SP, state->sp);
-		i8080op_i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), state->sp));
+		i8080op_putHL16(state, i8080op_addCarry16(state, i8080op_getHL(state), state->sp));
 		break;
 	case LDA: // load value of A from memory[store16_1]
 		store16_1 = (uint16_t)byte1 + (((uint16_t)byte2) << 8);
@@ -1234,8 +1234,8 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case JZ:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
-		log_trace("[%04X] JZ(%02X) %04X (%02X %02X) : %i", state->pc, JZ, store16_1, byte1, byte2, !state->f.z);
-		if (state->f.z) {
+		log_trace("[%04X] JZ(%02X) %04X (%02X %02X) : %i", state->pc, JZ, store16_1, byte1, byte2, state->f.z);
+		if (state->f.z == 1) {
 			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
@@ -1280,7 +1280,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 	case JNC:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JNC(%02X) %04X (%02X %02X) : %i", state->pc, JNC, store16_1, byte1, byte2, !state->f.c);
-		if (!state->f.c) {
+		if (state->f.c == 0) {
 			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
@@ -1324,7 +1324,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 	case JC:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JC(%02X) %04X (%02X %02X) : %i", state->pc, JC, store16_1, byte1, byte2, state->f.c);
-		if (state->f.c) {
+		if (state->f.c == 1) {
 			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
@@ -1362,12 +1362,12 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		break;
 	case POP_H:
 		log_trace("[%04X] POP_H(%02X)", state->pc, POP_H);
-		i8080op_i8080op_putHL16(state, i8080op_popStack(state));
+		i8080op_putHL16(state, i8080op_popStack(state));
 		break;
 	case JPO:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JPO(%02X) %04X (%02X %02X) : %i", state->pc, JPO, store16_1, byte1, byte2, !state->f.p);
-		if (!state->f.p) {
+		if (state->f.p == 0) {
 			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
@@ -1376,7 +1376,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] XTHL(%02X)", state->pc, XTHL);
 		store16_1 = i8080op_popStack(state);
 		i8080op_pushStack(state, i8080op_getHL(state));
-		i8080op_i8080op_putHL16(state, store16_1);
+		i8080op_putHL16(state, store16_1);
 		break;
 	case CPO:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
@@ -1418,7 +1418,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 	case JPE:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JPE(%02X) %04X (%02X %02X) : %i", state->pc, JPE, store16_1, byte1, byte2, state->f.p);
-		if (state->f.p) {
+		if (state->f.p == 1) {
 			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
@@ -1427,7 +1427,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		log_trace("[%04X] XCHG(%02X)", state->pc, XCHG);
 		store16_1 = i8080op_getDE(state);
 		i8080op_putDE16(state, i8080op_getHL(state));
-		i8080op_i8080op_putHL16(state, store16_1);
+		i8080op_putHL16(state, store16_1);
 		break;
 	case CPE:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // address
@@ -1465,7 +1465,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 	case JP:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JP(%02X) %04X (%02X %02X) : %i", state->pc, JP, store16_1, byte1, byte2, !state->f.s);
-		if (!state->f.s) {
+		if (state->f.s == 0) {
 			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
@@ -1511,7 +1511,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 	case JM:
 		store16_1 = ((uint16_t)byte2 << 8) + byte1; // jmpPos
 		log_trace("[%04X] JM(%02X) %04X (%02X %02X) : %i", state->pc, JM, store16_1, byte1, byte2, state->f.s);
-		if (state->f.s) {
+		if (state->f.s == 1) {
 			i8080op_setPC(state, store16_1); // Set the pc to jmpPos
 			pcShouldIncrement = false; // Stop the auto increment
 		}
@@ -1530,7 +1530,7 @@ bool i8080_executeOpcode(i8080State* state, uint8_t opcode) {
 		success = state->f.s;
 		break;
 	case CPI:
-		log_trace("[%04X] CMP_A(%02X) %02X", state->pc, CMP_A, byte1);
+		log_trace("[%04X] CPI(%02X) %02X", state->pc, CPI, byte1);
 		i8080_acFlagSetCmp(state, byte1);
 		store8_1 = i8080op_subCarry8(state, state->a, byte1);
 		i8080op_setZSP(state, store8_1);
@@ -1605,7 +1605,7 @@ void i8080op_putHL8(i8080State* state, uint8_t ubyte, uint8_t lbyte) {
 	state->h = ubyte;
 	state->l = lbyte;
 }
-void i8080op_i8080op_putHL16(i8080State* state, uint16_t b) {
+void i8080op_putHL16(i8080State* state, uint16_t b) {
 	state->h = b >> 8;
 	state->l = b & 0xFF;
 }

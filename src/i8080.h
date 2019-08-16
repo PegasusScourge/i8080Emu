@@ -80,7 +80,7 @@ void i8080op_putDE16(i8080State* state, uint16_t);
 
 // Puts a value into HL
 void i8080op_putHL8(i8080State* state, uint8_t ubyte, uint8_t lbyte);
-void i8080op_i8080op_putHL16(i8080State* state, uint16_t);
+void i8080op_putHL16(i8080State* state, uint16_t);
 
 // Sets the Z, S, P flags accordingly
 void i8080op_setZSP(i8080State* state, uint8_t v);
