@@ -841,6 +841,49 @@ void i8080_testProtocol(i8080State* state) {
 	utilTest_prepNext(state, ORI, 0x0F, 0x00); state->a = 0xF0; i8080_cpuTick(state);
 	success = state->a == 0xFF && state->f.c == 0 && state->f.z == 0 && state->f.p == 1; if (!success) { failedTests++; }
 	fprintf(testLog, "Test ORI\t(%02X)\t\t: [%s]\n", ORI, success ? "OK" : "FAIL"); // Print the result of the test
+
+	/* Move into the stack related functions */
+
+	// Jumping functions
+	utilTest_prepNext(state, JNZ, 0xFF, 0xFF); state->f.z = 0; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JNZ\t(%02X)\t\t: [%s]\n", JNZ, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JMP, 0xFF, 0xFF); i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JMP\t(%02X)\t\t: [%s]\n", JMP, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JZ, 0xFF, 0xFF); state->f.z = 1; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JZ \t(%02X)\t\t: [%s]\n", JZ, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JNC, 0xFF, 0xFF); state->f.c = 0; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JNC\t(%02X)\t\t: [%s]\n", JNC, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JC, 0xFF, 0xFF); state->f.c = 1; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JC \t(%02X)\t\t: [%s]\n", JC, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JNC, 0xFF, 0xFF); state->f.c = 0; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JNC\t(%02X)\t\t: [%s]\n", JNC, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JPO, 0xFF, 0xFF); state->f.p = 0; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JPO\t(%02X)\t\t: [%s]\n", JPO, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JPE, 0xFF, 0xFF); state->f.p = 1; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JPE\t(%02X)\t\t: [%s]\n", JPE, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JP, 0xFF, 0xFF); state->f.s = 0; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JP \t(%02X)\t\t: [%s]\n", JP, success ? "OK" : "FAIL"); // Print the result of the test
+
+	utilTest_prepNext(state, JM, 0xFF, 0xFF); state->f.s = 1; i8080_cpuTick(state);
+	success = state->pc == 0xFFFF; if (!success) { failedTests++; }
+	fprintf(testLog, "Test JM \t(%02X)\t\t: [%s]\n", JM, success ? "OK" : "FAIL"); // Print the result of the test
 	
 	// Output statistics
 	float elapsedTimeMs = sfTime_asMilliseconds(sfClock_getElapsedTime(timer));
@@ -849,6 +892,13 @@ void i8080_testProtocol(i8080State* state) {
 
 	// cloe test file
 	fclose(testLog);
+}
+
+void utilTest_prepStack(i8080State* state, uint16_t newSp) {
+	i8080op_setSP(state, newSp);
+	for (uint16_t i = state->sp - 10; i < state->sp + 10; i++) {
+		i8080op_writeMemory(state, i, 0);
+	}
 }
 
 void utilTest_prepNext(i8080State* state, uint8_t opcode, uint8_t byte1, uint8_t byte2) {
