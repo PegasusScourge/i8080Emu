@@ -1,5 +1,5 @@
 # i8080 Emulator project
-This is an emulator for the intel 8080 processor
+This is an emulator for the intel 8080 processor, written in C.
 
 Command line switches:
  - ```-h``` displays the help message
